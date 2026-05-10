@@ -6,25 +6,25 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>APEX · Défis Sportifs</title>
+    <!-- ══════════════════════════════════════════════════════════════════
+         RGPD 2026 — CHARGEMENT CONDITIONNEL
+         Les scripts Firebase ne sont chargés QU'après consentement explicite.
+         Le script Tailwind et React sont des scripts d'interface sans traceur.
+    ══════════════════════════════════════════════════════════════════ -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         html, body { font-family: 'DM Sans', sans-serif; background: #020617; height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; }
         #root { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* SCROLLBARS */
         .custom-scroll::-webkit-scrollbar { width: 3px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
 
-        /* AUTH */
         @keyframes fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
         @keyframes orb1 { 0%,100%{transform:translate(0,0)scale(1)} 33%{transform:translate(40px,-30px)scale(1.1)} 66%{transform:translate(-20px,20px)scale(.95)} }
         @keyframes orb2 { 0%,100%{transform:translate(0,0)scale(1)} 33%{transform:translate(-50px,20px)scale(1.05)} 66%{transform:translate(30px,-40px)scale(1.1)} }
@@ -36,12 +36,9 @@
         @keyframes pop { from{transform:scale(.8);opacity:0} to{transform:scale(1);opacity:1} }
         @keyframes spin { to{transform:rotate(360deg)} }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-        @keyframes countUp { from{transform:translateY(8px);opacity:0} to{transform:translateY(0);opacity:1} }
         @keyframes progressFill { from{width:0} to{width:var(--prog-w)} }
-        @keyframes dash { to{stroke-dashoffset:0} }
-        @keyframes firework { 0%{transform:scale(0) rotate(0deg);opacity:1} 100%{transform:scale(1.4) rotate(20deg);opacity:0} }
-        @keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
         @keyframes tabActive { from{width:0} to{width:100%} }
+        @keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
 
         .auth-card { animation: fadeUp .7s cubic-bezier(.16,1,.3,1) both; }
         .auth-logo { animation: float 4s ease-in-out infinite; }
@@ -52,25 +49,20 @@
         .anim-border { animation: borderGlow 2.5s ease-in-out infinite; }
         .input-glow:focus { border-color:#f97316!important; box-shadow:0 0 0 3px rgba(249,115,22,.12); }
         .auth-field { animation: fadeUp .6s cubic-bezier(.16,1,.3,1) both; }
-        .auth-field:nth-child(1){animation-delay:.15s} .auth-field:nth-child(2){animation-delay:.25s} .auth-field:nth-child(3){animation-delay:.35s}
         .auth-btn { position:relative; overflow:hidden; }
         .auth-btn::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,.12),transparent); opacity:0; transition:opacity .3s; }
         .auth-btn:hover::before { opacity:1; }
 
-        /* APP */
         .card { background: rgba(15,23,42,.8); border:1px solid rgba(30,41,59,.8); border-radius:20px; }
-        .card-glow { background: rgba(15,23,42,.9); border:1px solid rgba(234,88,12,.2); border-radius:20px; }
         .fade-in { animation: fadeUp .35s cubic-bezier(.16,1,.3,1) both; }
         .pop { animation: pop .25s cubic-bezier(.175,.885,.32,1.275) both; }
         .slide-up { animation: slideUp .4s cubic-bezier(.16,1,.3,1) both; }
         .slide-down { animation: slideDown .25s cubic-bezier(.16,1,.3,1) both; }
 
-        /* NAV */
         .nav-item { display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 20px; cursor:pointer; transition:all .2s; border-radius:14px; position:relative; }
         .nav-item.active { background:rgba(234,88,12,.1); }
         .nav-item.active::after { content:''; position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); width:20px; height:3px; background:#f97316; border-radius:2px; animation:tabActive .2s ease-out both; }
 
-        /* BADGE */
         .badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:99px; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
         .badge-orange { background:rgba(234,88,12,.15); border:1px solid rgba(234,88,12,.3); color:#fb923c; }
         .badge-green { background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.25); color:#4ade80; }
@@ -79,45 +71,33 @@
         .badge-yellow { background:rgba(234,179,8,.1); border:1px solid rgba(234,179,8,.25); color:#facc15; }
         .badge-slate { background:rgba(100,116,139,.1); border:1px solid rgba(100,116,139,.25); color:#94a3b8; }
 
-        /* PROGRESS */
         .progress-bar { height:6px; background:#1e293b; border-radius:3px; overflow:hidden; }
         .progress-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,#ea580c,#f97316); width:var(--prog-w,0%); transition:width 1s cubic-bezier(.16,1,.3,1); }
 
-        /* MODAL */
         .modal-overlay { position:fixed; inset:0; z-index:100; background:rgba(2,6,23,.9); backdrop-filter:blur(16px); display:flex; align-items:flex-end; justify-content:center; padding:16px; animation:fadeUp .2s ease-out; }
         .modal-sheet { background:#0f172a; border:1px solid #1e293b; border-radius:28px 28px 20px 20px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; }
 
-        /* CHALLENGE CARD */
         .challenge-card { background:rgba(15,23,42,.9); border:1px solid rgba(30,41,59,.8); border-radius:20px; transition:all .2s; cursor:pointer; }
         .challenge-card:hover { border-color:rgba(234,88,12,.35); transform:translateY(-1px); }
         .challenge-card.mine { border-color:rgba(234,88,12,.3); background:rgba(234,88,12,.04); }
         .challenge-card.won { border-color:rgba(34,197,94,.3); background:rgba(34,197,94,.04); }
         .challenge-card.lost { border-color:rgba(239,68,68,.2); background:rgba(239,68,68,.03); }
 
-        /* STAT CARD */
         .stat-card { background:rgba(15,23,42,.9); border:1px solid rgba(30,41,59,.8); border-radius:18px; padding:16px; }
-
-        /* RING */
         .ring-svg { transform:rotate(-90deg); }
         .ring-track { fill:none; stroke:#1e293b; stroke-width:8; }
         .ring-fill { fill:none; stroke-width:8; stroke-linecap:round; stroke-dasharray:var(--ring-dash,251); stroke-dashoffset:var(--ring-offset,251); transition:stroke-dashoffset 1.2s cubic-bezier(.16,1,.3,1); }
-
-        /* EMOJI */
         .emoji-native { font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif!important; line-height:1; display:inline-block; }
-
-        /* TOGGLE */
         .toggle-track { width:44px; height:24px; border-radius:12px; transition:background .3s; cursor:pointer; position:relative; flex-shrink:0; }
         .toggle-thumb { width:18px; height:18px; border-radius:50%; background:white; position:absolute; top:3px; transition:left .3s cubic-bezier(.175,.885,.32,1.275); box-shadow:0 1px 4px rgba(0,0,0,.3); }
 
         textarea { resize:none; }
         input, textarea { outline:none; color:white; }
         input::placeholder, textarea::placeholder { color:#475569; }
-
-        /* SCROLL CONTAINER */
         .scroll-area { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
 
-        /* RGPD */
-        .rgpd-overlay { position:fixed; inset:0; z-index:9999; background:rgba(2,6,23,.92); backdrop-filter:blur(24px); display:flex; align-items:flex-end; justify-content:center; padding:16px; padding-bottom:calc(16px + env(safe-area-inset-bottom)); }
+        /* ── RGPD overlays ── */
+        .rgpd-overlay { position:fixed; inset:0; z-index:9999; background:rgba(2,6,23,.95); backdrop-filter:blur(24px); display:flex; align-items:flex-end; justify-content:center; padding:16px; padding-bottom:calc(16px + env(safe-area-inset-bottom)); }
         .legal-overlay { position:fixed; inset:0; z-index:8000; background:#020617; display:flex; flex-direction:column; overflow:hidden; padding-top:env(safe-area-inset-top); }
         .legal-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
         .legal-h1 { font-family:'Syne',sans-serif; font-size:14px; font-weight:800; letter-spacing:.15em; text-transform:uppercase; }
@@ -126,35 +106,112 @@
         .legal-ul { font-size:12px; color:#94a3b8; line-height:1.75; margin-bottom:8px; padding-left:16px; list-style:disc; }
         .legal-link { color:#f97316; text-decoration:underline; }
         .rights-modal { position:fixed; inset:0; z-index:9000; background:rgba(2,6,23,.92); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; padding:16px; }
+
+        /* ── Bandeau cookie persistant ── */
+        .cookie-banner { position:fixed; bottom:0; left:0; right:0; z-index:8500; background:#0f172a; border-top:2px solid rgba(234,88,12,.4); padding:10px 16px; padding-bottom:calc(10px + env(safe-area-inset-bottom)); display:flex; align-items:center; justify-content:space-between; gap:12px; animation:slideUp .3s ease-out; }
+
+        /* ── Checkbox RGPD ── */
+        .rgpd-check { width:18px; height:18px; border:2px solid #334155; border-radius:5px; background:transparent; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+        .rgpd-check.checked { background:#ea580c; border-color:#ea580c; }
+
+        /* ── Age gate ── */
+        .age-gate { position:fixed; inset:0; z-index:10000; background:#020617; display:flex; align-items:center; justify-content:center; padding:24px; }
     </style>
 </head>
 <body>
 <div id="root"></div>
+
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-// ── SAME FIREBASE AS ONYX CHAT ──────────────────────────────────────────
-const firebaseConfig = {
-    apiKey: "AIzaSyCkiMirg--YtJMCENWm6Ba4qBn7XY55qrQ",
-    authDomain: "onyx-chat-by-rijoul.firebaseapp.com",
-    projectId: "onyx-chat-by-rijoul",
-    storageBucket: "onyx-chat-by-rijoul.firebasestorage.app",
-    messagingSenderId: "699855199393",
-    appId: "1:699855199393:web:0b454be9733e3853ada4e0"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+// ══════════════════════════════════════════════════════════════════════════
+//  RGPD 2026 — GESTIONNAIRE DE CONSENTEMENT
+//  Firebase ne se charge qu'après consentement. Toutes les préférences
+//  sont stockées dans localStorage['apex_consent_v2'] (JSON).
+// ══════════════════════════════════════════════════════════════════════════
+
+const CONSENT_KEY = 'apex_consent_v2';
+const CONSENT_VERSION = '2026-05';
+
+function loadConsent() {
+    try {
+        const raw = localStorage.getItem(CONSENT_KEY);
+        if (!raw) return null;
+        const c = JSON.parse(raw);
+        // Invalide si version différente (force re-consent)
+        if (c.version !== CONSENT_VERSION) return null;
+        return c;
+    } catch { return null; }
+}
+
+function saveConsent(prefs) {
+    const c = {
+        version: CONSENT_VERSION,
+        date: new Date().toISOString(),
+        essential: true,     // toujours vrai
+        functional: prefs.functional ?? true,
+        analytics: prefs.analytics ?? false,
+        ageConfirmed: prefs.ageConfirmed ?? false,
+    };
+    localStorage.setItem(CONSENT_KEY, JSON.stringify(c));
+    return c;
+}
+
+function revokeConsent() {
+    localStorage.removeItem(CONSENT_KEY);
+}
+
+// Charge Firebase dynamiquement après consentement
+let firebaseLoaded = false;
+let auth, db;
+
+function loadFirebase() {
+    return new Promise((resolve, reject) => {
+        if (firebaseLoaded) { resolve({ auth, db }); return; }
+        const scripts = [
+            'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
+            'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js',
+            'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js',
+        ];
+        let loaded = 0;
+        scripts.forEach(src => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = () => { loaded++; if (loaded === scripts.length) initFirebase(resolve, reject); };
+            s.onerror = reject;
+            document.head.appendChild(s);
+        });
+    });
+}
+
+function initFirebase(resolve, reject) {
+    try {
+        if (!window.firebase?.apps?.length) {
+            window.firebase.initializeApp({
+                apiKey: "AIzaSyCkiMirg--YtJMCENWm6Ba4qBn7XY55qrQ",
+                authDomain: "onyx-chat-by-rijoul.firebaseapp.com",
+                projectId: "onyx-chat-by-rijoul",
+                storageBucket: "onyx-chat-by-rijoul.firebasestorage.app",
+                messagingSenderId: "699855199393",
+                appId: "1:699855199393:web:0b454be9733e3853ada4e0"
+            });
+        }
+        auth = window.firebase.auth();
+        db = window.firebase.firestore();
+        firebaseLoaded = true;
+        resolve({ auth, db });
+    } catch(e) { reject(e); }
+}
 
 const ONYX_APP_ID = 'onyx-pro-chat';
 const APEX_APP_ID = 'apex-sport-challenges';
 const getAvatar = (name) => `https://ui-avatars.com/api/?name=${encodeURIComponent(name||'User')}&background=ea580c&color=fff&bold=true&rounded=true`;
 
 const SPORT_ICONS = {
-    running: '🏃', cycling: '🚴', swimming: '🏊', pushups: '💪', pullups: '🏋️',
-    situps: '🔥', plank: '🧘', walking: '🚶', yoga: '🧘', football: '⚽',
-    basketball: '🏀', tennis: '🎾', hiking: '🥾', rowing: '🚣', jumping: '⚡',
-    squats: '🏋️', burpees: '💥', custom: '🎯'
+    running:'🏃', cycling:'🚴', swimming:'🏊', pushups:'💪', pullups:'🏋️',
+    situps:'🔥', plank:'🧘', walking:'🚶', yoga:'🧘', football:'⚽',
+    basketball:'🏀', tennis:'🎾', hiking:'🥾', rowing:'🚣', jumping:'⚡',
+    squats:'🏋️', burpees:'💥', custom:'🎯'
 };
 const SPORT_LIST = [
     { id:'running', label:'Course à pied', unit:'km' },
@@ -192,7 +249,6 @@ const LOGO = () => (
     </svg>
 );
 
-// ── ICON ────────────────────────────────────────────────────────────────
 const Icon = ({ name, size=18, className='' }) => {
     const paths = {
         home: <><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>,
@@ -218,6 +274,10 @@ const Icon = ({ name, size=18, className='' }) => {
         chartbar: <><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>,
         arrowUp: <path d="M12 19V5M5 12l7-7 7 7"/>,
         copy: <><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></>,
+        shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>,
+        alertTriangle: <><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>,
+        flag: <><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></>,
+        download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>,
     };
     return (
         <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -226,21 +286,558 @@ const Icon = ({ name, size=18, className='' }) => {
     );
 };
 
-// ── AUTH SCREEN (same style as ONYX CHAT) ──────────────────────────────
-const AuthScreen = () => {
+// ══════════════════════════════════════════════════════════════════════════
+//  RGPD 2026 — VÉRIFICATION D'ÂGE (OBLIGATOIRE avant tout consentement)
+//  Art. 8 RGPD : 16 ans minimum dans l'UE / 15 ans accepté avec
+//  accord parental explicite. On exige 16 ans sans modération parentale.
+// ══════════════════════════════════════════════════════════════════════════
+const AgeGate = ({ onConfirm, onDeny }) => {
+    const [checked, setChecked] = useState(false);
+    return (
+        <div className="age-gate">
+            <div className="fade-in" style={{width:'100%',maxWidth:'380px',textAlign:'center'}}>
+                <div style={{fontSize:'48px',marginBottom:'16px'}} className="emoji-native">🔞</div>
+                <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'20px',color:'white',marginBottom:'8px',letterSpacing:'.08em'}}>Vérification d'âge</h2>
+                <p style={{color:'#94a3b8',fontSize:'12px',lineHeight:1.7,marginBottom:'24px'}}>
+                    Conformément au RGPD (art. 8), APEX est réservé aux personnes
+                    âgées d'au moins <strong style={{color:'white'}}>16 ans</strong> dans l'Union Européenne.
+                </p>
+
+                <div style={{background:'rgba(15,23,42,.9)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'16px',padding:'20px',marginBottom:'20px',textAlign:'left'}}>
+                    <button onClick={() => setChecked(c => !c)}
+                        style={{display:'flex',alignItems:'flex-start',gap:'12px',background:'none',border:'none',cursor:'pointer',padding:0,width:'100%',textAlign:'left'}}>
+                        <div className={`rgpd-check ${checked?'checked':''}`} style={{marginTop:'2px'}}>
+                            {checked && <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>}
+                        </div>
+                        <p style={{fontSize:'12px',color:'#e2e8f0',lineHeight:1.65}}>
+                            Je certifie sur l'honneur avoir au moins <strong>16 ans</strong> (ou 13 ans avec accord parental si hors UE) et avoir lu et accepté les conditions d'utilisation d'APEX.
+                        </p>
+                    </button>
+                </div>
+
+                <div style={{display:'flex',gap:'10px'}}>
+                    <button onClick={onDeny}
+                        style={{flex:1,padding:'13px',borderRadius:'14px',background:'rgba(30,41,59,.8)',border:'1px solid #1e293b',color:'#64748b',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>
+                        J'ai moins de 16 ans
+                    </button>
+                    <button disabled={!checked} onClick={() => checked && onConfirm()}
+                        style={{flex:2,padding:'13px',borderRadius:'14px',background:checked?'linear-gradient(135deg,#ea580c,#c2410c)':'#1e293b',color:checked?'white':'#64748b',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.1em',textTransform:'uppercase',border:'none',cursor:checked?'pointer':'not-allowed',transition:'all .2s'}}>
+                        Confirmer mon âge
+                    </button>
+                </div>
+
+                <p style={{fontSize:'9px',color:'#475569',marginTop:'12px',lineHeight:1.6}}>
+                    Cette déclaration est protégée par les lois relatives à la fausse déclaration.
+                    Si vous êtes mineur(e), veuillez quitter cette application.
+                </p>
+            </div>
+        </div>
+    );
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+//  RGPD 2026 — BANNIÈRE DE CONSENTEMENT PRINCIPALE
+//  Affichée AVANT tout chargement de Firebase / traitement de données.
+//  Conforme : pas de case précochée, refus aussi facile qu'accepter,
+//  granularité des choix, accès aux textes légaux avant choix.
+// ══════════════════════════════════════════════════════════════════════════
+const ConsentBanner = ({ onAccept, onRefuse, onCustomize, onPrivacy, onTerms }) => (
+    <div className="rgpd-overlay">
+        <div className="slide-up" style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:'28px',padding:'24px',width:'100%',maxWidth:'460px',boxShadow:'0 -20px 60px rgba(0,0,0,.5)'}}>
+            {/* En-tête */}
+            <div style={{display:'flex',alignItems:'flex-start',gap:'12px',marginBottom:'16px'}}>
+                <div style={{width:'40px',height:'40px',background:'rgba(234,88,12,.12)',border:'1px solid rgba(234,88,12,.25)',borderRadius:'14px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    <Icon name="shield" size={18} className="" style={{color:'#f97316'}}/>
+                </div>
+                <div>
+                    <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',letterSpacing:'.12em',textTransform:'uppercase',color:'white',marginBottom:'6px'}}>
+                        Vos données personnelles
+                    </h2>
+                    <p style={{fontSize:'11px',color:'#94a3b8',lineHeight:1.65}}>
+                        Avant d'utiliser APEX, vous devez nous autoriser à traiter certaines de vos données.
+                        Vous pouvez choisir librement et modifier vos préférences à tout moment.
+                    </p>
+                </div>
+            </div>
+
+            {/* Récap données */}
+            <div style={{background:'rgba(15,23,42,.8)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'14px',padding:'12px 14px',marginBottom:'14px'}}>
+                <p style={{fontSize:'9px',fontWeight:800,letterSpacing:'.12em',textTransform:'uppercase',color:'#f97316',marginBottom:'8px'}}>Ce que nous collectons</p>
+                {[
+                    { icon:'🔑', label:'Authentification', desc:'Email + UID Firebase (indispensable)', required:true },
+                    { icon:'👤', label:'Profil', desc:'Pseudo, photo de profil', required:true },
+                    { icon:'🏆', label:'Défis', desc:'Vos défis sportifs et progressions', required:true },
+                    { icon:'📊', label:'Statistiques anonymes', desc:'Usage agrégé du service', required:false },
+                ].map(item => (
+                    <div key={item.label} style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'6px'}}>
+                        <span style={{fontSize:'14px'}} className="emoji-native">{item.icon}</span>
+                        <p style={{fontSize:'10px',color:'#e2e8f0',flex:1}}>{item.label} <span style={{color:'#64748b'}}>— {item.desc}</span></p>
+                        <span style={{fontSize:'8px',fontWeight:700,padding:'2px 6px',borderRadius:'4px',background:item.required?'rgba(234,88,12,.15)':'rgba(100,116,139,.15)',color:item.required?'#fb923c':'#94a3b8',textTransform:'uppercase',letterSpacing:'.06em',flexShrink:0}}>{item.required?'Requis':'Optionnel'}</span>
+                    </div>
+                ))}
+            </div>
+
+            {/* Badge RGPD */}
+            <div style={{background:'rgba(34,197,94,.05)',border:'1px solid rgba(34,197,94,.15)',borderRadius:'12px',padding:'8px 12px',marginBottom:'16px',display:'flex',alignItems:'center',gap:'8px'}}>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <p style={{fontSize:'10px',color:'#86efac',fontWeight:600}}>Données hébergées en Europe · Aucune pub · Conforme RGPD 2026 · Aucune vente de données</p>
+            </div>
+
+            {/* Boutons — refus AUSSI accessible qu'accepter (exigence RGPD) */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px',marginBottom:'8px'}}>
+                <button onClick={onRefuse}
+                    style={{padding:'13px',borderRadius:'14px',background:'rgba(30,41,59,.8)',border:'1px solid rgba(100,116,139,.4)',color:'#94a3b8',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',transition:'all .2s'}}>
+                    Refuser
+                </button>
+                <button onClick={onAccept}
+                    style={{padding:'13px',borderRadius:'14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',border:'none',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',boxShadow:'0 4px 16px rgba(234,88,12,.3)',transition:'all .2s'}}>
+                    Accepter tout
+                </button>
+            </div>
+            <button onClick={onCustomize}
+                style={{width:'100%',padding:'10px',borderRadius:'14px',background:'transparent',border:'1px solid rgba(30,41,59,.8)',color:'#64748b',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',marginBottom:'14px',transition:'all .2s'}}>
+                Personnaliser mes choix
+            </button>
+
+            {/* Liens légaux AVANT tout consentement */}
+            <div style={{display:'flex',justifyContent:'center',gap:'16px'}}>
+                <button onClick={onPrivacy} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>
+                    Politique de confidentialité
+                </button>
+                <span style={{color:'#1e293b',fontSize:'9px'}}>·</span>
+                <button onClick={onTerms} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>
+                    CGU
+                </button>
+                <span style={{color:'#1e293b',fontSize:'9px'}}>·</span>
+                <span style={{fontSize:'9px',color:'#334155',fontWeight:600}}>v{CONSENT_VERSION}</span>
+            </div>
+        </div>
+    </div>
+);
+
+// ══════════════════════════════════════════════════════════════════════════
+//  RGPD 2026 — PERSONNALISATION GRANULAIRE
+//  Chaque catégorie est clairement décrite, la case "Essentiel" est
+//  verrouillée et non interactive. Aucune case n'est précochée pour
+//  les options optionnelles.
+// ══════════════════════════════════════════════════════════════════════════
+const ConsentCustomizer = ({ onSave, onClose }) => {
+    const [prefs, setPrefs] = useState({ essential: true, analytics: false, functional: false });
+    return (
+        <div className="rgpd-overlay">
+            <div className="slide-up" style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:'28px',padding:'24px',width:'100%',maxWidth:'460px',boxShadow:'0 -20px 60px rgba(0,0,0,.5)',maxHeight:'90vh',overflowY:'auto'}} className="custom-scroll">
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}}>
+                    <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',letterSpacing:'.12em',textTransform:'uppercase',color:'white'}}>
+                        Personnaliser
+                    </h2>
+                    <button onClick={onClose} style={{padding:'6px',background:'rgba(30,41,59,.8)',borderRadius:'8px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
+                        <Icon name="x" size={14}/>
+                    </button>
+                </div>
+                <p style={{fontSize:'10px',color:'#64748b',marginBottom:'16px',lineHeight:1.6}}>
+                    Vous pouvez activer ou désactiver chaque catégorie. Seules les données
+                    essentielles sont obligatoires pour utiliser le service.
+                </p>
+
+                {[
+                    {
+                        key:'essential', label:'Données essentielles (Requis)',
+                        desc:'Authentification Firebase, profil utilisateur, défis sportifs. Ces données sont indispensables au fonctionnement du service. Leur refus empêche toute utilisation.',
+                        base:'Art. 6§1b RGPD — Exécution du contrat', locked:true
+                    },
+                    {
+                        key:'functional', label:'Préférences fonctionnelles',
+                        desc:'Mémorisation de vos choix de consentement dans le stockage local de votre navigateur (localStorage). Aucune donnée n\'est transmise à un tiers.',
+                        base:'Art. 6§1a RGPD — Consentement', locked:false
+                    },
+                    {
+                        key:'analytics', label:'Statistiques anonymes',
+                        desc:'Données agrégées et anonymisées sur l\'utilisation du service. Aucune donnée individuelle n\'est partagée avec des tiers à des fins commerciales.',
+                        base:'Art. 6§1f RGPD — Intérêt légitime', locked:false
+                    },
+                ].map(item => (
+                    <div key={item.key} style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'12px',padding:'14px 0',borderBottom:'1px solid rgba(30,41,59,.7)'}}>
+                        <div style={{flex:1}}>
+                            <div style={{display:'flex',alignItems:'center',gap:'6px',marginBottom:'4px'}}>
+                                <p style={{fontSize:'11px',fontWeight:800,textTransform:'uppercase',letterSpacing:'.08em',color:'white'}}>{item.label}</p>
+                            </div>
+                            <p style={{fontSize:'10px',color:'#64748b',lineHeight:1.6,marginBottom:'4px'}}>{item.desc}</p>
+                            <p style={{fontSize:'9px',color:'#475569',fontStyle:'italic'}}>{item.base}</p>
+                        </div>
+                        <div style={{flexShrink:0,marginTop:'2px'}}>
+                            {item.locked ? (
+                                <div className="toggle-track" style={{background:'#ea580c',opacity:.5,cursor:'not-allowed'}}>
+                                    <div className="toggle-thumb" style={{left:'23px'}}/>
+                                </div>
+                            ) : (
+                                <button onClick={() => setPrefs(p=>({...p,[item.key]:!p[item.key]}))}
+                                    className="toggle-track" style={{background:prefs[item.key]?'#ea580c':'#1e293b',border:'none',cursor:'pointer'}}>
+                                    <div className="toggle-thumb" style={{left:prefs[item.key]?'23px':'3px'}}/>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                ))}
+
+                <button onClick={() => onSave(prefs)}
+                    style={{marginTop:'20px',width:'100%',padding:'14px',borderRadius:'14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>
+                    Enregistrer mes préférences
+                </button>
+                <p style={{fontSize:'9px',color:'#475569',textAlign:'center',marginTop:'8px',lineHeight:1.6}}>
+                    Vous pouvez modifier ces préférences à tout moment depuis votre profil.
+                    Le retrait du consentement n'affecte pas la licéité des traitements antérieurs.
+                </p>
+            </div>
+        </div>
+    );
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+//  RGPD 2026 — BANDEAU COOKIE PERSISTANT (post-consentement)
+//  Rappel discret que les préférences peuvent être modifiées.
+// ══════════════════════════════════════════════════════════════════════════
+const CookieStrip = ({ onManage }) => (
+    <div style={{position:'fixed',bottom:0,left:0,right:0,zIndex:500,background:'rgba(15,23,42,.95)',borderTop:'1px solid rgba(30,41,59,.8)',padding:'8px 16px',paddingBottom:'calc(8px + env(safe-area-inset-bottom))',display:'flex',alignItems:'center',gap:'12px',backdropFilter:'blur(10px)'}}>
+        <Icon name="shield" size={14} style={{color:'#64748b',flexShrink:0}}/>
+        <p style={{fontSize:'9px',color:'#475569',flex:1,lineHeight:1.5}}>
+            APEX utilise des données essentielles pour fonctionner. <button onClick={onManage} style={{color:'#f97316',background:'none',border:'none',cursor:'pointer',fontSize:'9px',fontWeight:700,padding:0,textDecoration:'underline'}}>Gérer mes préférences</button>
+        </p>
+        <button onClick={onManage} style={{fontSize:'8px',color:'#64748b',background:'rgba(30,41,59,.8)',border:'1px solid #1e293b',borderRadius:'8px',padding:'5px 8px',cursor:'pointer',fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase',flexShrink:0,whiteSpace:'nowrap'}}>
+            Préférences
+        </button>
+    </div>
+);
+
+// ══════════════════════════════════════════════════════════════════════════
+//  PAGE POLITIQUE DE CONFIDENTIALITÉ — mise à jour mai 2026
+// ══════════════════════════════════════════════════════════════════════════
+const PrivacyPage = ({ onClose }) => (
+    <div className="legal-overlay">
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 20px',borderBottom:'1px solid #1e293b',background:'rgba(15,23,42,.8)',flexShrink:0}}>
+            <h1 className="legal-h1" style={{color:'white'}}>Politique de confidentialité</h1>
+            <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'10px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
+                <Icon name="x" size={16}/>
+            </button>
+        </div>
+        <div className="legal-scroll custom-scroll" style={{padding:'20px'}}>
+            <p className="legal-p" style={{color:'#475569',fontSize:'10px',marginBottom:'4px'}}>Dernière mise à jour : <strong style={{color:'#f97316'}}>mai 2026</strong> · Version 2.0</p>
+            <p className="legal-p" style={{color:'#475569',fontSize:'10px',marginBottom:'24px'}}>Conforme RGPD (UE) 2016/679 · Digital Services Act 2024 · Lignes directrices CNIL 2026</p>
+
+            <h2 className="legal-h2">1. Identité du responsable du traitement</h2>
+            <p className="legal-p"><strong style={{color:'#e2e8f0'}}>APEX Défis Sportifs</strong> est une application web indépendante développée par Rijoul (développeur indépendant, France). Pour exercer vos droits ou poser toute question relative à vos données : contactez le responsable via l'onglet Profil → Signalement, ou via l'interface de messagerie de l'application.</p>
+
+            <h2 className="legal-h2">2. Principe de minimisation des données</h2>
+            <p className="legal-p">Conformément à l'article 5§1c du RGPD, APEX applique strictement le principe de minimisation : seules les données strictement nécessaires à chaque finalité déclarée sont collectées. Aucune donnée n'est collectée à titre préventif ou spéculatif.</p>
+
+            <h2 className="legal-h2">3. Données personnelles collectées</h2>
+            <p className="legal-p">Les catégories de données traitées et leur base légale respective :</p>
+            <ul className="legal-ul">
+                <li><strong style={{color:'#e2e8f0'}}>Adresse e-mail</strong> — authentification uniquement · base : exécution du contrat (art. 6§1b)</li>
+                <li><strong style={{color:'#e2e8f0'}}>Identifiant unique (UID) Firebase</strong> — gestion du compte · base : exécution du contrat</li>
+                <li><strong style={{color:'#e2e8f0'}}>Pseudo et photo de profil</strong> — identification dans l'application · base : exécution du contrat</li>
+                <li><strong style={{color:'#e2e8f0'}}>Données de défis sportifs</strong> — titres, objectifs, progressions, résultats · base : exécution du contrat</li>
+                <li><strong style={{color:'#e2e8f0'}}>Liste de contacts</strong> — identifiants des utilisateurs ajoutés comme amis · base : consentement (art. 6§1a)</li>
+                <li><strong style={{color:'#e2e8f0'}}>Horodatage</strong> — date de création du compte et des défis · base : intérêt légitime (sécurité)</li>
+                <li><strong style={{color:'#e2e8f0'}}>Déclaration d'âge</strong> — confirmation que l'utilisateur a 16 ans ou plus · base : obligation légale (art. 6§1c, art. 8 RGPD)</li>
+                <li><strong style={{color:'#e2e8f0'}}>Préférences de consentement</strong> — choix RGPD stockés en localStorage · base : consentement</li>
+            </ul>
+            <p className="legal-p">APEX ne collecte <strong style={{color:'#e2e8f0'}}>aucune</strong> donnée de localisation GPS, aucune donnée de santé au sens clinique, aucune donnée biométrique, aucune donnée bancaire, et n'utilise aucun traceur publicitaire ou de profilage comportemental.</p>
+
+            <h2 className="legal-h2">4. Chargement conditionnel des services tiers</h2>
+            <p className="legal-p">Depuis la version 2.0 (mai 2026), les scripts Firebase (authentification et base de données) ne sont chargés dans votre navigateur <strong style={{color:'#e2e8f0'}}>qu'après votre consentement explicite</strong>. Avant ce consentement, aucune connexion réseau vers les serveurs Google/Firebase n'est initiée par APEX.</p>
+
+            <h2 className="legal-h2">5. Finalités du traitement</h2>
+            <ul className="legal-ul">
+                <li><strong style={{color:'#e2e8f0'}}>Authentification et gestion du compte</strong> — permettre la création et la connexion sécurisée</li>
+                <li><strong style={{color:'#e2e8f0'}}>Fonctionnement du service</strong> — afficher les défis, suivre les progressions, calculer les classements</li>
+                <li><strong style={{color:'#e2e8f0'}}>Interactions sociales</strong> — permettre l'envoi et la réception de défis entre utilisateurs consentants</li>
+                <li><strong style={{color:'#e2e8f0'}}>Vérification de l'âge</strong> — s'assurer du respect des exigences légales concernant les mineurs</li>
+                <li><strong style={{color:'#e2e8f0'}}>Sécurité et intégrité</strong> — détecter et prévenir les abus, fraudes et utilisations non autorisées</li>
+            </ul>
+
+            <h2 className="legal-h2">6. Durée de conservation</h2>
+            <ul className="legal-ul">
+                <li>Données de profil : jusqu'à suppression du compte par l'utilisateur</li>
+                <li>Données de défis : jusqu'à suppression manuelle ou du compte</li>
+                <li>Données d'authentification Firebase : supprimées sous 90 jours après suppression du compte</li>
+                <li>Préférences de consentement : conservées en localStorage jusqu'à effacement manuel ou changement de version</li>
+                <li>Inactivité prolongée (+24 mois) : notification envoyée avant toute suppression</li>
+            </ul>
+
+            <h2 className="legal-h2">7. Sous-traitants et transferts de données</h2>
+            <p className="legal-p">APEX utilise <strong style={{color:'#e2e8f0'}}>Firebase / Google LLC</strong> comme sous-traitant unique :</p>
+            <ul className="legal-ul">
+                <li><strong style={{color:'#e2e8f0'}}>Firebase Authentication</strong> — gestion des identités (chargé après consentement)</li>
+                <li><strong style={{color:'#e2e8f0'}}>Cloud Firestore</strong> — base de données en région Europe de l'Ouest (europe-west)</li>
+                <li>Google LLC est soumis aux Clauses Contractuelles Types (CCT) 2021 approuvées par la Commission européenne</li>
+                <li>Conformité vérifiée avec le cadre EU-US Data Privacy Framework (2023)</li>
+                <li>Aucune autre entité tierce ne reçoit vos données personnelles</li>
+            </ul>
+            <p className="legal-p">Aucune donnée personnelle n'est vendue, revendue, louée ou partagée à des fins commerciales ou publicitaires. APEX est 100% sans publicité.</p>
+
+            <h2 className="legal-h2">8. Sécurité des données</h2>
+            <ul className="legal-ul">
+                <li>Authentification sécurisée via Firebase Auth avec hachage des mots de passe (bcrypt)</li>
+                <li>Communications chiffrées en transit (TLS 1.3)</li>
+                <li>Règles Firestore : chaque utilisateur n'accède qu'à ses propres données</li>
+                <li>Chargement conditionnel des scripts tiers (aucun script externe avant consentement)</li>
+                <li>Aucun accès administrateur aux mots de passe</li>
+            </ul>
+
+            <h2 className="legal-h2">9. Vos droits (RGPD art. 15 à 22)</h2>
+            <p className="legal-p">Vous disposez des droits suivants, exerçables depuis l'onglet Profil → Mes droits :</p>
+            <ul className="legal-ul">
+                <li><strong style={{color:'#e2e8f0'}}>Droit d'accès</strong> (art. 15) — copie de toutes vos données au format JSON</li>
+                <li><strong style={{color:'#e2e8f0'}}>Droit de rectification</strong> (art. 16) — modifier pseudo et photo de profil</li>
+                <li><strong style={{color:'#e2e8f0'}}>Droit à l'effacement</strong> (art. 17) — suppression définitive de compte et données</li>
+                <li><strong style={{color:'#e2e8f0'}}>Droit à la portabilité</strong> (art. 20) — export JSON lisible par machine</li>
+                <li><strong style={{color:'#e2e8f0'}}>Droit d'opposition</strong> (art. 21) — opposition au traitement fondé sur l'intérêt légitime</li>
+                <li><strong style={{color:'#e2e8f0'}}>Droit de limitation</strong> (art. 18) — gel temporaire du traitement</li>
+                <li><strong style={{color:'#e2e8f0'}}>Retrait du consentement</strong> — à tout moment, sans incidence sur les traitements passés</li>
+            </ul>
+            <p className="legal-p">Délai de réponse : 30 jours maximum (art. 12§3 RGPD). En cas de demande complexe, ce délai peut être prolongé de 60 jours avec notification motivée.</p>
+            <p className="legal-p">Vous pouvez également introduire une réclamation auprès de la <a href="https://www.cnil.fr" target="_blank" className="legal-link">CNIL</a> — 3 Place de Fontenoy, 75007 Paris — ou de l'autorité de contrôle de votre État membre de résidence.</p>
+
+            <h2 className="legal-h2">10. Cookies et stockage local</h2>
+            <p className="legal-p">APEX utilise le <strong style={{color:'#e2e8f0'}}>localStorage</strong> uniquement pour stocker vos préférences de consentement RGPD (clé : <code style={{color:'#f97316',fontSize:'10px'}}>apex_consent_v2</code>). Ce stockage n'est <strong style={{color:'#e2e8f0'}}>activé qu'après votre consentement</strong>. Aucun cookie de traçage, publicitaire ou analytique n'est utilisé. Firebase peut utiliser des cookies techniques strictement nécessaires à l'authentification, chargés uniquement après votre consentement.</p>
+
+            <h2 className="legal-h2">11. Protection des mineurs</h2>
+            <p className="legal-p">APEX est destiné aux personnes âgées d'au moins <strong style={{color:'#e2e8f0'}}>16 ans</strong> dans l'Union Européenne (art. 8 RGPD). Une vérification d'âge par déclaration sur l'honneur est requise avant tout accès. Si vous avez connaissance qu'un mineur a créé un compte, contactez-nous pour suppression immédiate.</p>
+
+            <h2 className="legal-h2">12. Signalement d'abus</h2>
+            <p className="legal-p">Pour signaler tout contenu illicite ou comportement abusif, utilisez le bouton "Signaler un abus" dans l'onglet Profil. Pour tout contenu impliquant des mineurs, signalez également sur <a href="https://www.internet-signalement.gouv.fr" target="_blank" className="legal-link">internet-signalement.gouv.fr</a>.</p>
+
+            <h2 className="legal-h2">13. Modifications de la présente politique</h2>
+            <p className="legal-p">Toute modification substantielle donnera lieu à une nouvelle version (numéro de version et date visibles en haut de ce document). Un nouveau recueil de consentement sera demandé si les finalités de traitement changent de manière significative.</p>
+
+            <div style={{height:'32px'}}/>
+        </div>
+    </div>
+);
+
+// ══════════════════════════════════════════════════════════════════════════
+//  CGU — mise à jour mai 2026
+// ══════════════════════════════════════════════════════════════════════════
+const TermsPage = ({ onClose }) => (
+    <div className="legal-overlay">
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 20px',borderBottom:'1px solid #1e293b',background:'rgba(15,23,42,.8)',flexShrink:0}}>
+            <h1 className="legal-h1" style={{color:'white'}}>Conditions générales d'utilisation</h1>
+            <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'10px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
+                <Icon name="x" size={16}/>
+            </button>
+        </div>
+        <div className="legal-scroll custom-scroll" style={{padding:'20px'}}>
+            <p className="legal-p" style={{color:'#475569',fontSize:'10px',marginBottom:'24px'}}>Dernière mise à jour : <strong style={{color:'#f97316'}}>mai 2026</strong> · Version 2.0</p>
+
+            <h2 className="legal-h2">1. Présentation du service</h2>
+            <p className="legal-p"><strong style={{color:'#e2e8f0'}}>APEX Défis Sportifs</strong> est une application web permettant à des utilisateurs de se lancer mutuellement des défis sportifs. Le service est développé et maintenu par Rijoul, développeur indépendant, France.</p>
+            <p className="legal-p">En utilisant APEX, vous acceptez sans réserve les présentes CGU. Si vous n'acceptez pas ces conditions, vous devez cesser d'utiliser le service.</p>
+
+            <h2 className="legal-h2">2. Accès et âge minimum</h2>
+            <p className="legal-p">L'accès est réservé aux personnes physiques capables de contracter :</p>
+            <ul className="legal-ul">
+                <li><strong style={{color:'#e2e8f0'}}>16 ans</strong> dans l'Union Européenne (art. 8 RGPD)</li>
+                <li><strong style={{color:'#e2e8f0'}}>13 ans</strong> dans les autres pays, sous réserve des législations nationales</li>
+            </ul>
+            <p className="legal-p">Une déclaration sur l'honneur est requise lors du premier accès. Rijoul se réserve le droit de supprimer tout compte appartenant à une personne n'ayant pas l'âge requis.</p>
+
+            <h2 className="legal-h2">3. Création de compte</h2>
+            <p className="legal-p">Vous êtes responsable de la confidentialité de vos identifiants, de toute activité effectuée depuis votre compte, et de l'exactitude de vos informations de profil. Signalez immédiatement toute utilisation non autorisée.</p>
+
+            <h2 className="legal-h2">4. Consentement préalable obligatoire</h2>
+            <p className="legal-p">Conformément au RGPD et aux lignes directrices CNIL 2025-2026, aucun traitement de données personnelles ni aucun chargement de service tiers (Firebase) n'intervient avant votre consentement explicite, libre, éclairé et granulaire. Le refus ne doit pas entraîner de désavantage injustifié autre que l'impossibilité d'utiliser le service.</p>
+
+            <h2 className="legal-h2">5. Utilisations interdites</h2>
+            <ul className="legal-ul">
+                <li>Usurpation d'identité ou création de faux profils</li>
+                <li>Harcèlement, menaces, intimidation, discrimination</li>
+                <li>Contenu illicite, violent, haineux, pornographique ou diffamatoire</li>
+                <li>Usage commercial non autorisé, spam</li>
+                <li>Tentative de contournement des sécurités ou d'accès aux données d'autrui</li>
+                <li>Transmission de malwares ou code malveillant</li>
+                <li>Création de multiples comptes pour contourner une suspension</li>
+                <li>Usage de robots ou scripts automatisés</li>
+            </ul>
+
+            <h2 className="legal-h2">6. Contenu des défis</h2>
+            <p className="legal-p">Les défis doivent rester dans un cadre sportif licite et respectueux. Ils ne doivent pas encourager des pratiques dangereuses sans avertissement approprié. Rijoul peut supprimer tout défi non conforme sans préavis.</p>
+
+            <h2 className="legal-h2">7. Propriété intellectuelle</h2>
+            <p className="legal-p">L'application, son design et son code sont la propriété exclusive de Rijoul. Les contenus créés par les utilisateurs restent leur propriété — en les publiant, ils accordent à Rijoul une licence d'hébergement non exclusive aux seules fins du service.</p>
+
+            <h2 className="legal-h2">8. Disponibilité et limitation de responsabilité</h2>
+            <p className="legal-p">Le service est fourni tel quel, sans garantie de disponibilité continue. Rijoul n'est pas responsable des blessures survenant lors de défis, des dommages indirects, ni des actions d'utilisateurs tiers.</p>
+            <p className="legal-p"><strong style={{color:'#e2e8f0'}}>Important :</strong> Consultez un professionnel de santé avant tout programme sportif intense. APEX n'est pas un service médical.</p>
+
+            <h2 className="legal-h2">9. Signalement d'abus (DSA — Digital Services Act)</h2>
+            <p className="legal-p">Conformément au Digital Services Act (règlement UE 2022/2065), tout utilisateur peut signaler un contenu illicite via le bouton "Signaler un abus" dans l'onglet Profil. Rijoul traitera les signalements dans un délai raisonnable et notifiera la décision prise. Pour les contenus impliquant des mineurs : <a href="https://www.internet-signalement.gouv.fr" target="_blank" className="legal-link">internet-signalement.gouv.fr</a>.</p>
+
+            <h2 className="legal-h2">10. Droit applicable et juridiction</h2>
+            <p className="legal-p">Les présentes CGU sont régies par le droit français. En cas de litige, les tribunaux du ressort de <strong style={{color:'#e2e8f0'}}>Besançon (Doubs, France)</strong> seront compétents, après tentative de résolution amiable.</p>
+
+            <h2 className="legal-h2">11. Mise à jour des CGU</h2>
+            <p className="legal-p">Toute modification substantielle donnera lieu à un nouvel affichage lors de la prochaine connexion. La poursuite de l'utilisation après notification vaut acceptation. Si les modifications affectent les finalités de traitement, un nouveau consentement RGPD sera requis.</p>
+
+            <div style={{height:'32px'}}/>
+        </div>
+    </div>
+);
+
+// ══════════════════════════════════════════════════════════════════════════
+//  RGPD 2026 — EXERCICE DES DROITS (depuis Profil)
+//  Export réel des données, suppression effective, retrait de consentement
+// ══════════════════════════════════════════════════════════════════════════
+const RightsModal = ({ user, onClose, onDeleteAccount }) => {
+    const [loading, setLoading] = useState(false);
+    const [exported, setExported] = useState(false);
+    const [reportSent, setReportSent] = useState(false);
+
+    const exportData = async () => {
+        setLoading(true);
+        try {
+            const profileDoc = await db.collection('artifacts').doc(ONYX_APP_ID)
+                .collection('public').doc('data').collection('profiles').doc(user.uid).get();
+            const challengesSnap = await db.collection(APEX_APP_ID)
+                .where('createdBy','==',user.uid).get();
+            const receivedSnap = await db.collection(APEX_APP_ID)
+                .where('challengedUid','==',user.uid).get();
+            const consentRaw = localStorage.getItem(CONSENT_KEY);
+
+            const exportObj = {
+                exportInfo: {
+                    generatedAt: new Date().toISOString(),
+                    requestedBy: user.uid,
+                    purpose: 'Exercice du droit d\'accès — art. 15 RGPD',
+                    format: 'JSON',
+                },
+                identity: { uid: user.uid, email: user.email },
+                profile: profileDoc.exists ? profileDoc.data() : {},
+                challengesCreated: challengesSnap.docs.map(d => d.data()),
+                challengesReceived: receivedSnap.docs.map(d => d.data()),
+                consentPreferences: consentRaw ? JSON.parse(consentRaw) : null,
+            };
+
+            const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type:'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `apex-mes-donnees-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            setExported(true);
+        } catch(e) { console.error(e); }
+        setLoading(false);
+    };
+
+    const withdrawConsent = () => {
+        revokeConsent();
+        auth.signOut().then(() => window.location.reload());
+    };
+
+    return (
+        <div className="rights-modal">
+            <div className="fade-in" style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:'24px',padding:'24px',width:'100%',maxWidth:'420px',maxHeight:'85vh',overflowY:'auto'}} className="custom-scroll">
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
+                    <div>
+                        <p style={{color:'#f97316',fontSize:'9px',fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase'}}>RGPD 2026</p>
+                        <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginTop:'2px'}}>Mes droits</h2>
+                    </div>
+                    <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'10px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
+                        <Icon name="x" size={16}/>
+                    </button>
+                </div>
+
+                {[
+                    {
+                        id:'access', icon:'📋', label:'Droit d\'accès (art. 15)',
+                        desc:'Téléchargez toutes vos données personnelles au format JSON lisible par machine.',
+                        action:'Exporter mes données', danger:false
+                    },
+                    {
+                        id:'rectify', icon:'✏️', label:'Droit de rectification (art. 16)',
+                        desc:'Modifiez votre pseudo et photo depuis la section Profil principal.',
+                        action:'Fermer', danger:false
+                    },
+                    {
+                        id:'portability', icon:'📦', label:'Droit à la portabilité (art. 20)',
+                        desc:'Même export que le droit d\'accès, dans un format standard et interopérable.',
+                        action:'Exporter mes données', danger:false
+                    },
+                    {
+                        id:'consent', icon:'🔄', label:'Retrait du consentement',
+                        desc:'Retirez votre consentement. Cela entraîne votre déconnexion et la réinitialisation de vos préférences. Les traitements antérieurs restent licites.',
+                        action:'Retirer mon consentement', danger:true
+                    },
+                    {
+                        id:'delete', icon:'🗑️', label:'Droit à l\'effacement (art. 17)',
+                        desc:'Supprimez définitivement votre compte et toutes vos données. Action irréversible.',
+                        action:'Supprimer mon compte', danger:true
+                    },
+                    {
+                        id:'report', icon:'🚩', label:'Signalement d\'abus (DSA)',
+                        desc:'Signalez un contenu illicite ou comportement abusif conformément au Digital Services Act.',
+                        action:'Envoyer un signalement', danger:false
+                    },
+                ].map(r => (
+                    <div key={r.id} style={{background:'rgba(15,23,42,.8)',border:`1px solid ${r.danger?'rgba(239,68,68,.2)':'rgba(30,41,59,.8)'}`,borderRadius:'14px',padding:'14px',marginBottom:'8px'}}>
+                        <div style={{display:'flex',alignItems:'flex-start',gap:'10px'}}>
+                            <span style={{fontSize:'20px'}} className="emoji-native">{r.icon}</span>
+                            <div style={{flex:1}}>
+                                <p style={{fontWeight:700,fontSize:'12px',color:r.danger?'#f87171':'white',marginBottom:'4px'}}>{r.label}</p>
+                                <p style={{fontSize:'10px',color:'#64748b',lineHeight:1.6,marginBottom:'8px'}}>{r.desc}</p>
+                                <button onClick={() => {
+                                    if (r.id==='access'||r.id==='portability') exportData();
+                                    else if (r.id==='delete') { onClose(); onDeleteAccount(); }
+                                    else if (r.id==='consent') withdrawConsent();
+                                    else if (r.id==='report') setReportSent(true);
+                                    else onClose();
+                                }}
+                                    style={{padding:'7px 14px',borderRadius:'10px',background:r.danger?'rgba(239,68,68,.1)':'rgba(234,88,12,.1)',border:`1px solid ${r.danger?'rgba(239,68,68,.3)':'rgba(234,88,12,.25)'}`,color:r.danger?'#f87171':'#f97316',fontSize:'10px',fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:'6px'}}>
+                                    {loading&&(r.id==='access'||r.id==='portability') ? '⏳ Export...'
+                                     : exported&&(r.id==='access'||r.id==='portability') ? '✓ Téléchargé !'
+                                     : reportSent&&r.id==='report' ? '✓ Signalement envoyé'
+                                     : r.action}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+                <div style={{background:'rgba(59,130,246,.05)',border:'1px solid rgba(59,130,246,.15)',borderRadius:'12px',padding:'12px',marginTop:'8px'}}>
+                    <p style={{fontSize:'10px',color:'#93c5fd',lineHeight:1.6}}>
+                        <strong>Autorité de contrôle :</strong> Vous pouvez déposer une plainte auprès de la <a href="https://www.cnil.fr" target="_blank" style={{color:'#60a5fa'}}>CNIL</a> — 3 Place de Fontenoy, 75007 Paris — ou de l'autorité de contrôle de votre pays de résidence (art. 77 RGPD).
+                    </p>
+                </div>
+
+                <p style={{fontSize:'9px',color:'#334155',textAlign:'center',marginTop:'12px'}}>
+                    Délai de traitement : 30 jours (art. 12§3 RGPD)
+                </p>
+            </div>
+        </div>
+    );
+};
+
+// ── AUTH SCREEN ──────────────────────────────────────────────────────────
+const AuthScreen = ({ onShowPrivacy, onShowTerms }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [displayName, setDisplayName] = useState('');
     const [isRegistering, setIsRegistering] = useState(false);
     const [authError, setAuthError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [ageChecked, setAgeChecked] = useState(false);
+    const [termsChecked, setTermsChecked] = useState(false);
 
     const handleAuth = async (e) => {
         e.preventDefault();
+        if (isRegistering && (!ageChecked || !termsChecked)) return;
         setAuthError(''); setLoading(true);
         try {
-            if (isRegistering) await auth.createUserWithEmailAndPassword(email, password);
-            else await auth.signInWithEmailAndPassword(email, password);
+            if (isRegistering) {
+                await auth.createUserWithEmailAndPassword(email, password);
+            } else {
+                await auth.signInWithEmailAndPassword(email, password);
+            }
         } catch(err) {
             const msgs = {
                 'auth/invalid-email':'Adresse email invalide.',
@@ -256,11 +853,10 @@ const AuthScreen = () => {
     };
 
     return (
-        <div style={{height:'100dvh',background:'#020617',display:'flex',alignItems:'center',justifyContent:'center',padding:'16px',overflow:'hidden',position:'relative'}}>
+        <div style={{height:'100dvh',background:'#020617',display:'flex',alignItems:'center',justifyContent:'center',padding:'16px',overflow:'hidden auto',position:'relative'}}>
             <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none'}}>
                 <div className="auth-orb-1" style={{position:'absolute',top:'10%',left:'5%',width:'320px',height:'320px',borderRadius:'50%',background:'radial-gradient(circle,rgba(234,88,12,.18) 0%,transparent 70%)',filter:'blur(40px)'}}/>
                 <div className="auth-orb-2" style={{position:'absolute',bottom:'10%',right:'5%',width:'280px',height:'280px',borderRadius:'50%',background:'radial-gradient(circle,rgba(251,146,60,.12) 0%,transparent 70%)',filter:'blur(40px)'}}/>
-                <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(234,88,12,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(234,88,12,.03) 1px,transparent 1px)',backgroundSize:'48px 48px'}}/>
             </div>
             <div className="auth-card" style={{width:'100%',maxWidth:'400px',position:'relative',zIndex:1}}>
                 <div style={{textAlign:'center',marginBottom:'32px'}}>
@@ -269,25 +865,25 @@ const AuthScreen = () => {
                     </div>
                     <h1 className="shimmer-text" style={{fontFamily:'Syne,sans-serif',fontSize:'28px',fontWeight:800,letterSpacing:'.15em',marginBottom:'6px',textTransform:'uppercase'}}>APEX</h1>
                     <p style={{color:'#ea580c',fontSize:'10px',fontWeight:700,letterSpacing:'.2em',textTransform:'uppercase'}}>Défis Sportifs</p>
-                    <p style={{color:'#475569',fontSize:'10px',fontWeight:600,letterSpacing:'.1em',textTransform:'uppercase',marginTop:'4px'}}>
-                        {isRegistering ? 'Créez votre compte athlète' : 'Rejoignez vos défis'}
-                    </p>
                 </div>
+
                 <div className="anim-border" style={{background:'rgba(15,23,42,.8)',border:'1px solid rgba(234,88,12,.2)',borderRadius:'28px',padding:'28px',backdropFilter:'blur(20px)',boxShadow:'0 25px 50px rgba(0,0,0,.5)'}}>
                     <div style={{display:'flex',background:'rgba(2,6,23,.6)',borderRadius:'14px',padding:'4px',marginBottom:'24px',border:'1px solid #1e293b'}}>
                         {['Connexion','Inscription'].map((label,i) => (
-                            <button key={i} onClick={() => { setIsRegistering(i===1); setAuthError(''); }}
+                            <button key={i} onClick={() => { setIsRegistering(i===1); setAuthError(''); setAgeChecked(false); setTermsChecked(false); }}
                                 style={{flex:1,padding:'8px',borderRadius:'10px',fontSize:'11px',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',transition:'all .25s',background:isRegistering===(i===1)?'#ea580c':'transparent',color:isRegistering===(i===1)?'white':'#64748b',border:'none',cursor:'pointer',fontFamily:'Syne,sans-serif'}}>
                                 {label}
                             </button>
                         ))}
                     </div>
+
                     <form onSubmit={handleAuth} style={{display:'flex',flexDirection:'column',gap:'12px'}}>
                         {authError && (
                             <div style={{background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.3)',borderRadius:'12px',padding:'10px 14px',color:'#f87171',fontSize:'11px',fontWeight:600,display:'flex',alignItems:'center',gap:'8px'}}>
                                 <span>⚠</span>{authError}
                             </div>
                         )}
+
                         {isRegistering && (
                             <div className="auth-field" style={{position:'relative'}}>
                                 <input type="text" required placeholder="Pseudo athlète" className="input-glow"
@@ -298,6 +894,7 @@ const AuthScreen = () => {
                                 </div>
                             </div>
                         )}
+
                         <div className="auth-field" style={{position:'relative'}}>
                             <input type="email" required placeholder="Adresse email" className="input-glow"
                                 style={{width:'100%',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'14px',padding:'13px 16px 13px 44px',fontSize:'13px',transition:'all .25s',fontFamily:'DM Sans,sans-serif',boxSizing:'border-box'}}
@@ -306,6 +903,7 @@ const AuthScreen = () => {
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                             </div>
                         </div>
+
                         <div className="auth-field" style={{position:'relative'}}>
                             <input type="password" required placeholder="Mot de passe" className="input-glow"
                                 style={{width:'100%',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'14px',padding:'13px 16px 13px 44px',fontSize:'13px',transition:'all .25s',fontFamily:'DM Sans,sans-serif',boxSizing:'border-box'}}
@@ -314,18 +912,50 @@ const AuthScreen = () => {
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                             </div>
                         </div>
-                        <button type="submit" disabled={loading} className="auth-btn"
-                            style={{marginTop:'8px',width:'100%',background:loading?'#9a3412':'linear-gradient(135deg,#ea580c,#c2410c)',border:'1px solid rgba(251,146,60,.3)',borderRadius:'14px',padding:'14px',color:'white',fontWeight:800,fontSize:'12px',letterSpacing:'.12em',textTransform:'uppercase',cursor:loading?'not-allowed':'pointer',transition:'all .25s',boxShadow:'0 4px 20px rgba(234,88,12,.3)',fontFamily:'Syne,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
-                            {loading ? (<><div style={{width:'16px',height:'16px',border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .7s linear infinite'}}/> Chargement...</>) : (isRegistering ? '⚡ Créer mon profil' : '⚡ Entrer en compétition')}
+
+                        {/* Checkboxes obligatoires à l'inscription (RGPD) */}
+                        {isRegistering && (
+                            <div style={{display:'flex',flexDirection:'column',gap:'10px',padding:'12px',background:'rgba(2,6,23,.5)',borderRadius:'12px',border:'1px solid #1e293b'}}>
+                                <button type="button" onClick={() => setAgeChecked(c=>!c)}
+                                    style={{display:'flex',alignItems:'flex-start',gap:'10px',background:'none',border:'none',cursor:'pointer',padding:0,textAlign:'left'}}>
+                                    <div className={`rgpd-check ${ageChecked?'checked':''}`} style={{marginTop:'2px'}}>
+                                        {ageChecked && <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>}
+                                    </div>
+                                    <p style={{fontSize:'10px',color:'#94a3b8',lineHeight:1.5}}>
+                                        Je certifie avoir au moins <strong style={{color:'white'}}>16 ans</strong> (art. 8 RGPD)
+                                    </p>
+                                </button>
+                                <button type="button" onClick={() => setTermsChecked(c=>!c)}
+                                    style={{display:'flex',alignItems:'flex-start',gap:'10px',background:'none',border:'none',cursor:'pointer',padding:0,textAlign:'left'}}>
+                                    <div className={`rgpd-check ${termsChecked?'checked':''}`} style={{marginTop:'2px'}}>
+                                        {termsChecked && <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>}
+                                    </div>
+                                    <p style={{fontSize:'10px',color:'#94a3b8',lineHeight:1.5}}>
+                                        J'accepte les <button type="button" onClick={e=>{e.stopPropagation();onShowTerms();}} style={{color:'#f97316',background:'none',border:'none',cursor:'pointer',fontSize:'10px',fontWeight:700,padding:0,textDecoration:'underline'}}>CGU</button> et la <button type="button" onClick={e=>{e.stopPropagation();onShowPrivacy();}} style={{color:'#f97316',background:'none',border:'none',cursor:'pointer',fontSize:'10px',fontWeight:700,padding:0,textDecoration:'underline'}}>politique de confidentialité</button>
+                                    </p>
+                                </button>
+                            </div>
+                        )}
+
+                        <button type="submit"
+                            disabled={loading || (isRegistering && (!ageChecked || !termsChecked))}
+                            className="auth-btn"
+                            style={{marginTop:'8px',width:'100%',background:(loading||(isRegistering&&(!ageChecked||!termsChecked)))?'#1e293b':'linear-gradient(135deg,#ea580c,#c2410c)',border:'1px solid rgba(251,146,60,.3)',borderRadius:'14px',padding:'14px',color:'white',fontWeight:800,fontSize:'12px',letterSpacing:'.12em',textTransform:'uppercase',cursor:(loading||(isRegistering&&(!ageChecked||!termsChecked)))?'not-allowed':'pointer',transition:'all .25s',boxShadow:'0 4px 20px rgba(234,88,12,.3)',fontFamily:'Syne,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
+                            {loading
+                                ? (<><div style={{width:'16px',height:'16px',border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .7s linear infinite'}}/> Chargement...</>)
+                                : (isRegistering ? '⚡ Créer mon profil' : '⚡ Entrer en compétition')}
                         </button>
                     </form>
-                    <div style={{marginTop:'20px',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
-                        <div style={{height:'1px',flex:1,background:'rgba(30,41,59,.8)'}}/>
-                        <div style={{display:'flex',alignItems:'center',gap:'5px',padding:'4px 10px',background:'rgba(234,88,12,.06)',border:'1px solid rgba(234,88,12,.15)',borderRadius:'20px'}}>
-                            <span className="emoji-native" style={{fontSize:'10px'}}>⚡</span>
-                            <span style={{color:'#f97316',fontSize:'9px',fontWeight:800,letterSpacing:'.15em',textTransform:'uppercase'}}>Profil ONYX compatible</span>
-                        </div>
-                        <div style={{height:'1px',flex:1,background:'rgba(30,41,59,.8)'}}/>
+
+                    {/* Liens légaux accessibles depuis l'écran de connexion */}
+                    <div style={{marginTop:'16px',display:'flex',justifyContent:'center',gap:'12px'}}>
+                        <button onClick={onShowPrivacy} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>
+                            Confidentialité
+                        </button>
+                        <span style={{color:'#1e293b',fontSize:'9px'}}>·</span>
+                        <button onClick={onShowTerms} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>
+                            CGU
+                        </button>
                     </div>
                 </div>
             </div>
@@ -333,355 +963,7 @@ const AuthScreen = () => {
     );
 };
 
-// ── RGPD : POLITIQUE DE CONFIDENTIALITÉ ─────────────────────────────────
-const PrivacyPage = ({ onClose }) => (
-    <div className="legal-overlay">
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 20px',borderBottom:'1px solid #1e293b',background:'rgba(15,23,42,.8)',flexShrink:0}}>
-            <h1 className="legal-h1" style={{color:'white'}}>Politique de confidentialité</h1>
-            <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'10px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-            </button>
-        </div>
-        <div className="legal-scroll custom-scroll" style={{padding:'20px'}}>
-            <p className="legal-p" style={{color:'#475569',fontSize:'10px',marginBottom:'24px'}}>Dernière mise à jour : mai 2025 · Version 1.0</p>
-
-            <h2 className="legal-h2">1. Identité du responsable du traitement</h2>
-            <p className="legal-p"><strong style={{color:'#e2e8f0'}}>APEX Défis Sportifs</strong> est une application web indépendante développée par Rijoul. Pour toute question relative à vos données personnelles, vous pouvez contacter le responsable directement via l'application.</p>
-
-            <h2 className="legal-h2">2. Données personnelles collectées</h2>
-            <p className="legal-p">Dans le cadre du fonctionnement d'APEX, les données suivantes sont collectées et traitées :</p>
-            <ul className="legal-ul">
-                <li><strong style={{color:'#e2e8f0'}}>Adresse e-mail</strong> — utilisée uniquement pour l'authentification et la connexion à votre compte</li>
-                <li><strong style={{color:'#e2e8f0'}}>Identifiant unique (UID)</strong> — attribué automatiquement par Firebase à la création du compte</li>
-                <li><strong style={{color:'#e2e8f0'}}>Pseudo (nom d'affichage)</strong> — choisi librement par l'utilisateur</li>
-                <li><strong style={{color:'#e2e8f0'}}>Photo de profil</strong> — facultative, générée automatiquement par défaut</li>
-                <li><strong style={{color:'#e2e8f0'}}>Données de défis sportifs</strong> — titres, objectifs, progressions et résultats des défis créés ou acceptés</li>
-                <li><strong style={{color:'#e2e8f0'}}>Liste de contacts</strong> — identifiants des utilisateurs ajoutés comme amis, stockés dans votre espace personnel</li>
-                <li><strong style={{color:'#e2e8f0'}}>Horodatage d'activité</strong> — date de création du compte et des défis</li>
-            </ul>
-            <p className="legal-p">APEX ne collecte <strong style={{color:'#e2e8f0'}}>aucune donnée de localisation</strong>, aucune donnée de santé au sens clinique, aucune donnée bancaire et n'utilise aucun traceur publicitaire.</p>
-
-            <h2 className="legal-h2">3. Finalités du traitement</h2>
-            <ul className="legal-ul">
-                <li><strong style={{color:'#e2e8f0'}}>Authentification</strong> — permettre la création de compte et la connexion sécurisée</li>
-                <li><strong style={{color:'#e2e8f0'}}>Fonctionnement de l'application</strong> — afficher les défis, suivre les progressions, calculer les classements</li>
-                <li><strong style={{color:'#e2e8f0'}}>Interactions sociales</strong> — permettre l'envoi et la réception de défis entre utilisateurs consentants</li>
-                <li><strong style={{color:'#e2e8f0'}}>Amélioration du service</strong> — statistiques anonymes d'usage (aucune donnée individuelle transmise à des tiers)</li>
-            </ul>
-
-            <h2 className="legal-h2">4. Base légale du traitement (RGPD)</h2>
-            <p className="legal-p">Le traitement de vos données repose sur les bases légales suivantes, conformément au Règlement (UE) 2016/679 (RGPD) :</p>
-            <ul className="legal-ul">
-                <li><strong style={{color:'#e2e8f0'}}>Consentement explicite</strong> (art. 6§1a) — recueilli lors de votre première utilisation via la bannière de consentement. Vous pouvez retirer ce consentement à tout moment.</li>
-                <li><strong style={{color:'#e2e8f0'}}>Exécution d'un contrat</strong> (art. 6§1b) — les données de profil et de défis sont nécessaires au fonctionnement du service que vous avez choisi d'utiliser.</li>
-                <li><strong style={{color:'#e2e8f0'}}>Intérêt légitime</strong> (art. 6§1f) — maintien de la sécurité du service et prévention des abus.</li>
-            </ul>
-
-            <h2 className="legal-h2">5. Durée de conservation</h2>
-            <ul className="legal-ul">
-                <li>Données de profil : conservées jusqu'à suppression du compte par l'utilisateur</li>
-                <li>Données de défis : conservées tant que le compte est actif ou jusqu'à suppression manuelle</li>
-                <li>Données d'authentification Firebase : supprimées dans les 90 jours suivant la suppression du compte</li>
-                <li>En cas d'inactivité prolongée (plus de 24 mois), les données pourront être supprimées après notification</li>
-            </ul>
-
-            <h2 className="legal-h2">6. Sous-traitants et transferts de données</h2>
-            <p className="legal-p">APEX utilise les services de <strong style={{color:'#e2e8f0'}}>Firebase / Google LLC</strong> pour l'infrastructure technique :</p>
-            <ul className="legal-ul">
-                <li><strong style={{color:'#e2e8f0'}}>Firebase Authentication</strong> — gestion sécurisée des comptes utilisateurs</li>
-                <li><strong style={{color:'#e2e8f0'}}>Cloud Firestore</strong> — base de données hébergée en région Europe de l'Ouest (europe-west)</li>
-                <li>Google LLC est soumis aux Clauses Contractuelles Types (CCT) approuvées par la Commission européenne, garantissant un niveau de protection adéquat conforme au RGPD</li>
-                <li>Politique de confidentialité Google : <a href="https://policies.google.com/privacy" target="_blank" className="legal-link">policies.google.com/privacy</a></li>
-            </ul>
-            <p className="legal-p">Aucune donnée personnelle n'est vendue, revendue ou partagée avec des tiers à des fins commerciales ou publicitaires.</p>
-
-            <h2 className="legal-h2">7. Sécurité des données</h2>
-            <p className="legal-p">Les mesures de sécurité suivantes sont mises en œuvre :</p>
-            <ul className="legal-ul">
-                <li>Authentification sécurisée via Firebase Auth avec hachage des mots de passe (bcrypt)</li>
-                <li>Communications chiffrées en transit via HTTPS/TLS</li>
-                <li>Règles de sécurité Firestore limitant l'accès aux seules données autorisées pour chaque utilisateur</li>
-                <li>Aucun accès administrateur aux mots de passe des utilisateurs</li>
-            </ul>
-
-            <h2 className="legal-h2">8. Vos droits (RGPD)</h2>
-            <p className="legal-p">Conformément au RGPD, vous disposez des droits suivants que vous pouvez exercer depuis l'onglet Profil de l'application ou en contactant le responsable :</p>
-            <ul className="legal-ul">
-                <li><strong style={{color:'#e2e8f0'}}>Droit d'accès</strong> (art. 15) — obtenir une copie de toutes vos données personnelles traitées</li>
-                <li><strong style={{color:'#e2e8f0'}}>Droit de rectification</strong> (art. 16) — corriger ou mettre à jour votre pseudo et votre photo de profil</li>
-                <li><strong style={{color:'#e2e8f0'}}>Droit à l'effacement</strong> (art. 17) — supprimer définitivement votre compte et toutes vos données</li>
-                <li><strong style={{color:'#e2e8f0'}}>Droit à la portabilité</strong> (art. 20) — exporter vos données dans un format lisible</li>
-                <li><strong style={{color:'#e2e8f0'}}>Droit d'opposition</strong> (art. 21) — vous opposer à certains traitements</li>
-                <li><strong style={{color:'#e2e8f0'}}>Droit de limitation</strong> (art. 18) — demander la limitation du traitement</li>
-                <li><strong style={{color:'#e2e8f0'}}>Retrait du consentement</strong> — à tout moment, sans incidence sur les traitements antérieurs, via le bouton "Gérer mes préférences"</li>
-            </ul>
-            <p className="legal-p">Vous avez également le droit d'introduire une réclamation auprès de la <a href="https://www.cnil.fr" target="_blank" className="legal-link">Commission Nationale de l'Informatique et des Libertés (CNIL)</a>, 3 Place de Fontenoy, 75007 Paris.</p>
-
-            <h2 className="legal-h2">9. Cookies et stockage local</h2>
-            <p className="legal-p">APEX utilise le <strong style={{color:'#e2e8f0'}}>stockage local du navigateur (localStorage)</strong> uniquement pour conserver vos préférences de consentement. Aucun cookie de traçage ou publicitaire n'est utilisé. Firebase peut utiliser des cookies techniques strictement nécessaires au fonctionnement de l'authentification.</p>
-
-            <h2 className="legal-h2">10. Mineurs</h2>
-            <p className="legal-p">APEX est destiné aux personnes âgées d'au moins <strong style={{color:'#e2e8f0'}}>16 ans</strong> dans l'Union Européenne (conformément à l'art. 8 du RGPD). Pour les autres pays, l'âge minimum est de 13 ans. Si vous avez connaissance qu'un mineur a créé un compte sans autorisation parentale, veuillez nous contacter pour que les données soient supprimées.</p>
-
-            <div style={{height:'32px'}}/>
-        </div>
-    </div>
-);
-
-// ── RGPD : CGU ──────────────────────────────────────────────────────────
-const TermsPage = ({ onClose }) => (
-    <div className="legal-overlay">
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 20px',borderBottom:'1px solid #1e293b',background:'rgba(15,23,42,.8)',flexShrink:0}}>
-            <h1 className="legal-h1" style={{color:'white'}}>Conditions générales d'utilisation</h1>
-            <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'10px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-            </button>
-        </div>
-        <div className="legal-scroll custom-scroll" style={{padding:'20px'}}>
-            <p className="legal-p" style={{color:'#475569',fontSize:'10px',marginBottom:'24px'}}>Dernière mise à jour : mai 2025 · Version 1.0</p>
-
-            <h2 className="legal-h2">1. Présentation du service</h2>
-            <p className="legal-p"><strong style={{color:'#e2e8f0'}}>APEX Défis Sportifs</strong> est une application web permettant à des utilisateurs de se lancer mutuellement des défis sportifs et de suivre leurs progressions. Le service est développé et maintenu par Rijoul, développeur indépendant.</p>
-            <p className="legal-p">En utilisant APEX, vous acceptez sans réserve les présentes Conditions Générales d'Utilisation (CGU). Si vous n'acceptez pas ces conditions, vous devez cesser d'utiliser le service.</p>
-
-            <h2 className="legal-h2">2. Accès au service et âge minimum</h2>
-            <p className="legal-p">L'accès à APEX est réservé aux personnes physiques capables de contracter. L'âge minimum requis est :</p>
-            <ul className="legal-ul">
-                <li><strong style={{color:'#e2e8f0'}}>16 ans</strong> dans les pays membres de l'Union Européenne (conformément au RGPD)</li>
-                <li><strong style={{color:'#e2e8f0'}}>13 ans</strong> dans les autres pays, sous réserve des législations nationales applicables</li>
-            </ul>
-            <p className="legal-p">En créant un compte, vous déclarez sur l'honneur avoir l'âge requis. Rijoul se réserve le droit de supprimer tout compte appartenant à une personne n'ayant pas l'âge minimum requis.</p>
-
-            <h2 className="legal-h2">3. Création de compte et responsabilités</h2>
-            <p className="legal-p">La création d'un compte nécessite la fourniture d'une adresse e-mail valide et d'un mot de passe. Vous êtes seul responsable de :</p>
-            <ul className="legal-ul">
-                <li>La confidentialité de vos identifiants de connexion</li>
-                <li>Toute activité effectuée depuis votre compte</li>
-                <li>L'exactitude des informations de profil que vous fournissez</li>
-                <li>La notification immédiate de toute utilisation non autorisée de votre compte</li>
-            </ul>
-
-            <h2 className="legal-h2">4. Règles de conduite et utilisations interdites</h2>
-            <p className="legal-p">En utilisant APEX, vous vous engagez à respecter les règles suivantes. Il est strictement interdit de :</p>
-            <ul className="legal-ul">
-                <li>Usurper l'identité d'une autre personne ou d'un tiers</li>
-                <li>Harceler, menacer, intimider ou discriminer d'autres utilisateurs</li>
-                <li>Créer des défis à contenu illicite, violent, haineux, pornographique ou diffamatoire</li>
-                <li>Utiliser le service à des fins commerciales non autorisées ou de spam</li>
-                <li>Tenter de contourner les mesures de sécurité ou d'accéder aux données d'autres utilisateurs</li>
-                <li>Transmettre des virus, malwares ou tout code malveillant</li>
-                <li>Utiliser des robots, scripts ou outils automatisés pour accéder au service</li>
-                <li>Créer plusieurs comptes dans le but de contourner une suspension</li>
-            </ul>
-
-            <h2 className="legal-h2">5. Contenu des défis</h2>
-            <p className="legal-p">Les utilisateurs sont entièrement responsables des défis sportifs qu'ils créent. Les défis doivent respecter les règles suivantes :</p>
-            <ul className="legal-ul">
-                <li>Le contenu doit être licite et respectueux</li>
-                <li>Les défis ne doivent pas encourager des pratiques sportives dangereuses ou extrêmes sans avertissement approprié</li>
-                <li>Les titres et descriptions doivent rester dans un cadre sportif et sain</li>
-            </ul>
-            <p className="legal-p">Rijoul se réserve le droit de supprimer tout défi ne respectant pas ces règles, sans préavis.</p>
-
-            <h2 className="legal-h2">6. Propriété intellectuelle</h2>
-            <p className="legal-p">L'application APEX, son design, son logo, son architecture et son code source sont la propriété exclusive de Rijoul. Toute reproduction, adaptation ou utilisation non autorisée est strictement interdite.</p>
-            <p className="legal-p">Les contenus créés par les utilisateurs (pseudos, titres de défis, descriptions) restent leur propriété. En les publiant sur APEX, vous accordez à Rijoul une licence non exclusive et gratuite d'hébergement et d'affichage aux seules fins du fonctionnement du service.</p>
-
-            <h2 className="legal-h2">7. Disponibilité du service</h2>
-            <p className="legal-p">Rijoul met à disposition le service APEX tel quel, sans garantie de disponibilité continue. Des interruptions techniques peuvent survenir pour maintenance ou suite à des incidents chez les prestataires (Firebase/Google). Rijoul ne saurait être tenu responsable de toute perte de données ou d'accès liée à ces interruptions.</p>
-
-            <h2 className="legal-h2">8. Limitation de responsabilité</h2>
-            <p className="legal-p">Rijoul ne peut être tenu responsable :</p>
-            <ul className="legal-ul">
-                <li>Des blessures ou accidents pouvant survenir lors de la réalisation de défis sportifs</li>
-                <li>Du contenu des interactions entre utilisateurs</li>
-                <li>Des dommages indirects résultant de l'utilisation ou de l'impossibilité d'utiliser le service</li>
-                <li>Des actions d'utilisateurs tiers sur la plateforme</li>
-            </ul>
-            <p className="legal-p"><strong style={{color:'#e2e8f0'}}>Important :</strong> Consultez un professionnel de santé avant d'entreprendre tout programme sportif intense. APEX n'est pas un service médical.</p>
-
-            <h2 className="legal-h2">9. Signalement d'abus</h2>
-            <p className="legal-p">Si vous êtes victime ou témoin d'un comportement abusif sur APEX, vous pouvez contacter le responsable directement via l'application. En cas de contenu illicite grave (notamment impliquant des mineurs), vous avez l'obligation de le signaler aux autorités compétentes : <a href="https://www.internet-signalement.gouv.fr" target="_blank" className="legal-link">internet-signalement.gouv.fr</a>.</p>
-
-            <h2 className="legal-h2">10. Modification des CGU</h2>
-            <p className="legal-p">Rijoul se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés de toute modification substantielle par un avertissement lors de leur prochaine connexion. La poursuite de l'utilisation du service après notification vaut acceptation des nouvelles conditions.</p>
-
-            <h2 className="legal-h2">11. Résiliation</h2>
-            <p className="legal-p">Vous pouvez supprimer votre compte à tout moment depuis l'onglet Profil de l'application. Rijoul se réserve le droit de suspendre ou supprimer tout compte en cas de violation des présentes CGU, sans préavis ni indemnité.</p>
-
-            <h2 className="legal-h2">12. Droit applicable et juridiction</h2>
-            <p className="legal-p">Les présentes CGU sont régies par le droit français. En cas de litige relatif à l'interprétation ou à l'exécution des présentes CGU, et à défaut de résolution amiable, les tribunaux français du ressort de Besançon (Doubs) seront compétents.</p>
-
-            <div style={{height:'32px'}}/>
-        </div>
-    </div>
-);
-
-// ── RGPD : BANNIÈRE DE CONSENTEMENT ─────────────────────────────────────
-const ConsentBanner = ({ onAccept, onRefuse, onCustomize, onPrivacy, onTerms }) => (
-    <div className="rgpd-overlay">
-        <div className="slide-up" style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:'28px',padding:'24px',width:'100%',maxWidth:'460px',boxShadow:'0 -20px 60px rgba(0,0,0,.5)'}}>
-            <div style={{display:'flex',alignItems:'flex-start',gap:'12px',marginBottom:'16px'}}>
-                <div style={{width:'40px',height:'40px',background:'rgba(234,88,12,.12)',border:'1px solid rgba(234,88,12,.25)',borderRadius:'14px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                </div>
-                <div>
-                    <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',letterSpacing:'.12em',textTransform:'uppercase',color:'white',marginBottom:'6px'}}>Confidentialité & Données</h2>
-                    <p style={{fontSize:'11px',color:'#94a3b8',lineHeight:1.65}}>
-                        APEX collecte uniquement les données nécessaires à son fonctionnement : authentification, profil, défis sportifs et liste de contacts. Aucune donnée n'est vendue ni utilisée à des fins publicitaires.
-                    </p>
-                </div>
-            </div>
-
-            <div style={{background:'rgba(34,197,94,.05)',border:'1px solid rgba(34,197,94,.15)',borderRadius:'12px',padding:'10px 14px',marginBottom:'16px',display:'flex',alignItems:'center',gap:'8px'}}>
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                <p style={{fontSize:'10px',color:'#86efac',fontWeight:600}}>Données hébergées en Europe · Aucune pub · Conforme RGPD</p>
-            </div>
-
-            <div style={{display:'flex',gap:'8px',marginBottom:'10px'}}>
-                <button onClick={onRefuse} style={{flex:1,padding:'12px',borderRadius:'14px',background:'rgba(30,41,59,.8)',border:'1px solid #1e293b',color:'#94a3b8',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>Refuser</button>
-                <button onClick={onAccept} style={{flex:2,padding:'12px',borderRadius:'14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',border:'none',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',boxShadow:'0 4px 16px rgba(234,88,12,.3)'}}>Accepter tout</button>
-            </div>
-            <button onClick={onCustomize} style={{width:'100%',padding:'10px',borderRadius:'14px',background:'transparent',border:'1px solid rgba(30,41,59,.8)',color:'#64748b',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',marginBottom:'14px'}}>
-                Personnaliser mes choix
-            </button>
-            <div style={{display:'flex',justifyContent:'center',gap:'16px'}}>
-                <button onClick={onPrivacy} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer'}}>Politique de confidentialité</button>
-                <span style={{color:'#1e293b',fontSize:'9px'}}>·</span>
-                <button onClick={onTerms} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer'}}>CGU</button>
-            </div>
-        </div>
-    </div>
-);
-
-// ── RGPD : PERSONNALISATION DES CONSENTEMENTS ────────────────────────────
-const ConsentCustomizer = ({ onSave, onClose }) => {
-    const [prefs, setPrefs] = useState({ essential: true, analytics: false, functional: true });
-    return (
-        <div className="rgpd-overlay">
-            <div className="slide-up" style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:'28px',padding:'24px',width:'100%',maxWidth:'460px',boxShadow:'0 -20px 60px rgba(0,0,0,.5)'}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
-                    <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',letterSpacing:'.12em',textTransform:'uppercase',color:'white'}}>Personnaliser</h2>
-                    <button onClick={onClose} style={{padding:'6px',background:'rgba(30,41,59,.8)',borderRadius:'8px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                {[
-                    { key:'essential', label:'Données essentielles', desc:'Authentification, profil, défis. Indispensables au fonctionnement du service.', locked:true },
-                    { key:'functional', label:'Préférences fonctionnelles', desc:'Mémorisation de vos préférences de consentement dans votre navigateur.', locked:false },
-                    { key:'analytics', label:'Statistiques anonymes', desc:'Données agrégées sur l\'utilisation du service (aucune donnée individuelle partagée).', locked:false },
-                ].map(item => (
-                    <div key={item.key} style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'12px',padding:'14px 0',borderBottom:'1px solid #1e293b'}}>
-                        <div style={{flex:1}}>
-                            <div style={{display:'flex',alignItems:'center',gap:'6px',marginBottom:'4px'}}>
-                                <p style={{fontSize:'11px',fontWeight:800,textTransform:'uppercase',letterSpacing:'.08em',color:'white'}}>{item.label}</p>
-                                {item.locked && <span style={{fontSize:'8px',background:'rgba(30,41,59,.8)',color:'#64748b',padding:'2px 8px',borderRadius:'4px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.06em'}}>Requis</span>}
-                            </div>
-                            <p style={{fontSize:'10px',color:'#64748b',lineHeight:1.6}}>{item.desc}</p>
-                        </div>
-                        <div style={{flexShrink:0,marginTop:'2px'}}>
-                            {item.locked ? (
-                                <div className="toggle-track" style={{background:'#ea580c',opacity:.6,cursor:'not-allowed'}}><div className="toggle-thumb" style={{left:'23px'}}/></div>
-                            ) : (
-                                <button onClick={() => setPrefs(p=>({...p,[item.key]:!p[item.key]}))} className="toggle-track" style={{background:prefs[item.key]?'#ea580c':'#1e293b',border:'none',cursor:'pointer'}}>
-                                    <div className="toggle-thumb" style={{left:prefs[item.key]?'23px':'3px'}}/>
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                ))}
-                <button onClick={() => onSave(prefs)} style={{marginTop:'20px',width:'100%',padding:'14px',borderRadius:'14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>
-                    Enregistrer mes préférences
-                </button>
-                <p style={{fontSize:'9px',color:'#475569',textAlign:'center',marginTop:'8px'}}>Le refus des données essentielles empêche l'utilisation du service.</p>
-            </div>
-        </div>
-    );
-};
-
-// ── RGPD : GESTION DES DROITS (depuis profil) ───────────────────────────
-const RightsModal = ({ user, onClose, onDeleteAccount }) => {
-    const [activeRight, setActiveRight] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [exported, setExported] = useState(false);
-
-    const exportData = async () => {
-        setLoading(true);
-        try {
-            const profileDoc = await db.collection('artifacts').doc(ONYX_APP_ID).collection('public').doc('data').collection('profiles').doc(user.uid).get();
-            const challengesSnap = await db.collection(APEX_APP_ID).where('createdBy','==',user.uid).get();
-            const receivedSnap = await db.collection(APEX_APP_ID).where('challengedUid','==',user.uid).get();
-            const data = {
-                exportDate: new Date().toISOString(),
-                profile: profileDoc.exists ? profileDoc.data() : {},
-                challengesCreated: challengesSnap.docs.map(d=>d.data()),
-                challengesReceived: receivedSnap.docs.map(d=>d.data()),
-            };
-            const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href=url; a.download='apex-mes-donnees.json';
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            setExported(true);
-        } catch(e) { console.error(e); }
-        setLoading(false);
-    };
-
-    return (
-        <div className="rights-modal">
-            <div className="fade-in" style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:'24px',padding:'24px',width:'100%',maxWidth:'420px',maxHeight:'85vh',overflowY:'auto'}} className="custom-scroll">
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
-                    <div>
-                        <p style={{color:'#f97316',fontSize:'9px',fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase'}}>RGPD</p>
-                        <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginTop:'2px'}}>Mes droits</h2>
-                    </div>
-                    <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'10px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                    </button>
-                </div>
-
-                {[
-                    { id:'access', icon:'📋', label:'Droit d\'accès', desc:'Téléchargez toutes vos données personnelles au format JSON.', action: 'Exporter mes données' },
-                    { id:'rectify', icon:'✏️', label:'Droit de rectification', desc:'Modifiez votre pseudo et photo de profil depuis l\'onglet Profil.', action: 'Aller au profil' },
-                    { id:'delete', icon:'🗑️', label:'Droit à l\'effacement', desc:'Supprimez définitivement votre compte et toutes vos données.', action: 'Supprimer mon compte', danger: true },
-                    { id:'portability', icon:'📦', label:'Droit à la portabilité', desc:'Exportez vos données dans un format standard et lisible.', action: 'Exporter mes données' },
-                    { id:'object', icon:'🚫', label:'Droit d\'opposition', desc:'Contactez-nous pour vous opposer à certains traitements.', action: null },
-                    { id:'consent', icon:'🔄', label:'Retirer mon consentement', desc:'Réinitialisez vos préférences de consentement.', action: 'Gérer les préférences' },
-                ].map(r => (
-                    <div key={r.id} style={{background:'rgba(15,23,42,.8)',border:`1px solid ${r.danger?'rgba(239,68,68,.2)':'rgba(30,41,59,.8)'}`,borderRadius:'14px',padding:'14px',marginBottom:'8px'}}>
-                        <div style={{display:'flex',alignItems:'flex-start',gap:'10px'}}>
-                            <span style={{fontSize:'20px'}}>{r.icon}</span>
-                            <div style={{flex:1}}>
-                                <p style={{fontWeight:700,fontSize:'12px',color:r.danger?'#f87171':'white',marginBottom:'4px'}}>{r.label}</p>
-                                <p style={{fontSize:'10px',color:'#64748b',lineHeight:1.6,marginBottom:'8px'}}>{r.desc}</p>
-                                {r.action && (
-                                    <button onClick={() => {
-                                        if (r.id==='access'||r.id==='portability') exportData();
-                                        else if (r.id==='delete') { onClose(); onDeleteAccount(); }
-                                        else if (r.id==='consent') { localStorage.removeItem('apex_consent'); window.location.reload(); }
-                                        else onClose();
-                                    }}
-                                        style={{padding:'7px 14px',borderRadius:'10px',background:r.danger?'rgba(239,68,68,.1)':'rgba(234,88,12,.1)',border:`1px solid ${r.danger?'rgba(239,68,68,.3)':'rgba(234,88,12,.25)'}`,color:r.danger?'#f87171':'#f97316',fontSize:'10px',fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:'6px'}}>
-                                        {loading&&(r.id==='access'||r.id==='portability') ? '⏳ Export...' : exported&&(r.id==='access'||r.id==='portability') ? '✓ Téléchargé !' : r.action}
-                                    </button>
-                                )}
-                                {!r.action && <p style={{fontSize:'9px',color:'#475569',fontStyle:'italic'}}>Contactez le responsable via l'application.</p>}
-                            </div>
-                        </div>
-                    </div>
-                ))}
-
-                <div style={{background:'rgba(59,130,246,.05)',border:'1px solid rgba(59,130,246,.15)',borderRadius:'12px',padding:'12px',marginTop:'8px'}}>
-                    <p style={{fontSize:'10px',color:'#93c5fd',lineHeight:1.6}}>
-                        <strong>Autorité de contrôle :</strong> Vous pouvez déposer une plainte auprès de la <a href="https://www.cnil.fr" target="_blank" style={{color:'#60a5fa'}}>CNIL</a> — 3 Place de Fontenoy, 75007 Paris — si vous estimez que vos droits ne sont pas respectés.
-                    </p>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// ── HELPERS ─────────────────────────────────────────────────────────────
+// ── HELPERS ──────────────────────────────────────────────────────────────
 const formatDate = (ts) => {
     if (!ts) return '';
     const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -690,18 +972,14 @@ const formatDate = (ts) => {
 const daysLeft = (deadline) => {
     if (!deadline) return null;
     const d = deadline.toDate ? deadline.toDate() : new Date(deadline);
-    const diff = Math.ceil((d - new Date()) / 86400000);
-    return diff;
+    return Math.ceil((d - new Date()) / 86400000);
 };
 const progressPct = (current, goal) => Math.min(100, Math.round((current / goal) * 100));
 
 // ── CREATE CHALLENGE MODAL ──────────────────────────────────────────────
 const CreateChallengeModal = ({ user, profile, friends, friendProfiles, onClose }) => {
     const [step, setStep] = useState(1);
-    const [form, setForm] = useState({
-        title: '', sport: '', unit: '', goal: '', deadline: '', description: '',
-        challengedUid: '', isPublic: false,
-    });
+    const [form, setForm] = useState({ title:'', sport:'', unit:'', goal:'', deadline:'', description:'', challengedUid:'', isPublic:false });
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
@@ -712,28 +990,19 @@ const CreateChallengeModal = ({ user, profile, friends, friendProfiles, onClose 
         setLoading(true);
         try {
             const challengedProfile = friendProfiles[form.challengedUid] || {};
-            const deadline = form.deadline ? firebase.firestore.Timestamp.fromDate(new Date(form.deadline)) : null;
+            const deadline = form.deadline ? window.firebase.firestore.Timestamp.fromDate(new Date(form.deadline)) : null;
             await db.collection(APEX_APP_ID).add({
                 title: form.title || `Défi ${selectedSport?.label || form.sport}`,
-                sport: form.sport,
-                unit: form.unit || selectedSport?.unit || 'pts',
-                goal: Number(form.goal),
-                description: form.description,
-                deadline,
-                isPublic: form.isPublic,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                createdBy: user.uid,
-                createdByName: profile.displayName,
+                sport: form.sport, unit: form.unit || selectedSport?.unit || 'pts',
+                goal: Number(form.goal), description: form.description,
+                deadline, isPublic: form.isPublic,
+                createdAt: window.firebase.firestore.FieldValue.serverTimestamp(),
+                createdBy: user.uid, createdByName: profile.displayName,
                 createdByPhoto: profile.photoURL || getAvatar(profile.displayName),
                 challengedUid: form.challengedUid,
                 challengedName: challengedProfile.displayName || 'Adversaire',
                 challengedPhoto: challengedProfile.photoURL || getAvatar(challengedProfile.displayName),
-                status: 'pending', // pending | active | completed
-                progress: {
-                    [user.uid]: 0,
-                    [form.challengedUid]: 0,
-                },
-                accepted: false,
+                status: 'pending', progress: { [user.uid]: 0, [form.challengedUid]: 0 }, accepted: false,
             });
             setSuccess(true);
             setTimeout(onClose, 1500);
@@ -745,39 +1014,30 @@ const CreateChallengeModal = ({ user, profile, friends, friendProfiles, onClose 
             <div className="modal-sheet" style={{borderRadius:'28px'}} onClick={e => e.stopPropagation()}>
                 {success ? (
                     <div style={{padding:'48px 32px',textAlign:'center'}}>
-                        <div style={{fontSize:'56px',marginBottom:'16px',animation:'pop .4s ease-out'}} className="emoji-native">🏆</div>
+                        <div style={{fontSize:'56px',marginBottom:'16px'}} className="emoji-native">🏆</div>
                         <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'18px',color:'white',marginBottom:'8px'}}>Défi lancé !</h3>
                         <p style={{color:'#64748b',fontSize:'12px'}}>Votre adversaire va être notifié.</p>
                     </div>
                 ) : (
                     <>
-                        {/* Header */}
                         <div style={{padding:'20px 20px 0',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                             <div>
                                 <p style={{color:'#ea580c',fontSize:'9px',fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase'}}>Nouveau défi · Étape {step}/3</p>
                                 <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginTop:'2px'}}>
-                                    {step===1 ? 'Choisissez le sport' : step===2 ? "L'objectif" : "L'adversaire"}
+                                    {step===1?'Choisissez le sport':step===2?"L'objectif":"L'adversaire"}
                                 </h3>
                             </div>
-                            <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'12px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
-                                <Icon name="x" size={16}/>
-                            </button>
+                            <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'12px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}><Icon name="x" size={16}/></button>
                         </div>
-
-                        {/* Progress */}
                         <div style={{padding:'12px 20px',display:'flex',gap:'6px'}}>
-                            {[1,2,3].map(i => (
-                                <div key={i} style={{height:'3px',flex:1,background:step>=i?'#ea580c':'#1e293b',borderRadius:'2px',transition:'background .3s'}}/>
-                            ))}
+                            {[1,2,3].map(i => (<div key={i} style={{height:'3px',flex:1,background:step>=i?'#ea580c':'#1e293b',borderRadius:'2px',transition:'background .3s'}}/>))}
                         </div>
-
                         <div style={{padding:'0 20px 20px',maxHeight:'65vh',overflowY:'auto'}} className="custom-scroll">
-                            {/* STEP 1: SPORT */}
-                            {step === 1 && (
+                            {step===1 && (
                                 <div className="fade-in">
                                     <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'8px',marginBottom:'16px'}}>
                                         {SPORT_LIST.map(s => (
-                                            <button key={s.id} onClick={() => setForm(f => ({...f, sport:s.id, unit:s.unit}))}
+                                            <button key={s.id} onClick={() => setForm(f=>({...f,sport:s.id,unit:s.unit}))}
                                                 style={{padding:'12px 8px',borderRadius:'14px',border:`1px solid ${form.sport===s.id?'#ea580c':'#1e293b'}`,background:form.sport===s.id?'rgba(234,88,12,.12)':'rgba(15,23,42,.8)',cursor:'pointer',textAlign:'center',transition:'all .15s'}}>
                                                 <div style={{fontSize:'20px',marginBottom:'4px'}} className="emoji-native">{SPORT_ICONS[s.id]}</div>
                                                 <p style={{fontSize:'9px',fontWeight:700,color:form.sport===s.id?'#f97316':'#94a3b8',letterSpacing:'.05em',textTransform:'uppercase',lineHeight:1.2}}>{s.label}</p>
@@ -785,60 +1045,56 @@ const CreateChallengeModal = ({ user, profile, friends, friendProfiles, onClose 
                                         ))}
                                     </div>
                                     <div style={{marginBottom:'12px'}}>
-                                        <label style={{color:'#64748b',fontSize:'9px',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',display:'block',marginBottom:'6px'}}>Titre du défi (optionnel)</label>
+                                        <label style={{color:'#64748b',fontSize:'9px',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',display:'block',marginBottom:'6px'}}>Titre (optionnel)</label>
                                         <input className="input-glow" placeholder={`Défi ${selectedSport?.label||'sportif'}`}
                                             style={{width:'100%',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'12px',padding:'11px 14px',fontSize:'13px',transition:'all .25s',fontFamily:'DM Sans,sans-serif',boxSizing:'border-box'}}
-                                            value={form.title} onChange={e => setForm(f=>({...f,title:e.target.value}))}/>
+                                            value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}/>
                                     </div>
-                                    <button disabled={!form.sport} onClick={() => setStep(2)}
-                                        style={{width:'100%',padding:'14px',borderRadius:'14px',background:form.sport?'linear-gradient(135deg,#ea580c,#c2410c)':'#1e293b',color:form.sport?'white':'#64748b',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:form.sport?'pointer':'not-allowed',transition:'all .2s'}}>
+                                    <button disabled={!form.sport} onClick={()=>setStep(2)}
+                                        style={{width:'100%',padding:'14px',borderRadius:'14px',background:form.sport?'linear-gradient(135deg,#ea580c,#c2410c)':'#1e293b',color:form.sport?'white':'#64748b',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:form.sport?'pointer':'not-allowed'}}>
                                         Suivant →
                                     </button>
                                 </div>
                             )}
-
-                            {/* STEP 2: OBJECTIF */}
-                            {step === 2 && (
+                            {step===2 && (
                                 <div className="fade-in" style={{display:'flex',flexDirection:'column',gap:'12px'}}>
                                     <div>
-                                        <label style={{color:'#64748b',fontSize:'9px',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',display:'block',marginBottom:'6px'}}>Objectif ({form.unit || selectedSport?.unit || 'pts'})</label>
+                                        <label style={{color:'#64748b',fontSize:'9px',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',display:'block',marginBottom:'6px'}}>Objectif ({form.unit||selectedSport?.unit||'pts'})</label>
                                         <input type="number" min="1" className="input-glow" placeholder="Ex: 100"
                                             style={{width:'100%',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'12px',padding:'11px 14px',fontSize:'20px',fontWeight:700,transition:'all .25s',fontFamily:'Syne,sans-serif',boxSizing:'border-box'}}
-                                            value={form.goal} onChange={e => setForm(f=>({...f,goal:e.target.value}))}/>
+                                            value={form.goal} onChange={e=>setForm(f=>({...f,goal:e.target.value}))}/>
                                     </div>
                                     <div>
                                         <label style={{color:'#64748b',fontSize:'9px',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',display:'block',marginBottom:'6px'}}>Unité</label>
                                         <input className="input-glow" placeholder={selectedSport?.unit||'pts'}
                                             style={{width:'100%',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'12px',padding:'11px 14px',fontSize:'13px',transition:'all .25s',fontFamily:'DM Sans,sans-serif',boxSizing:'border-box'}}
-                                            value={form.unit} onChange={e => setForm(f=>({...f,unit:e.target.value}))}/>
+                                            value={form.unit} onChange={e=>setForm(f=>({...f,unit:e.target.value}))}/>
                                     </div>
                                     <div>
                                         <label style={{color:'#64748b',fontSize:'9px',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',display:'block',marginBottom:'6px'}}>Date limite (optionnel)</label>
                                         <input type="date" className="input-glow"
                                             style={{width:'100%',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'12px',padding:'11px 14px',fontSize:'13px',transition:'all .25s',fontFamily:'DM Sans,sans-serif',boxSizing:'border-box',colorScheme:'dark'}}
-                                            value={form.deadline} onChange={e => setForm(f=>({...f,deadline:e.target.value}))}/>
+                                            value={form.deadline} onChange={e=>setForm(f=>({...f,deadline:e.target.value}))}/>
                                     </div>
                                     <div>
                                         <label style={{color:'#64748b',fontSize:'9px',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',display:'block',marginBottom:'6px'}}>Description (optionnel)</label>
                                         <textarea className="input-glow" rows="2" placeholder="Règles, contexte..."
                                             style={{width:'100%',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'12px',padding:'11px 14px',fontSize:'12px',transition:'all .25s',fontFamily:'DM Sans,sans-serif',boxSizing:'border-box'}}
-                                            value={form.description} onChange={e => setForm(f=>({...f,description:e.target.value}))}/>
+                                            value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))}/>
                                     </div>
                                     <div style={{display:'flex',gap:'8px'}}>
-                                        <button onClick={() => setStep(1)} style={{flex:1,padding:'12px',borderRadius:'14px',background:'rgba(30,41,59,.8)',color:'#94a3b8',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',letterSpacing:'.1em',textTransform:'uppercase',border:'1px solid #1e293b',cursor:'pointer'}}>← Retour</button>
-                                        <button disabled={!form.goal} onClick={() => setStep(3)}
+                                        <button onClick={()=>setStep(1)} style={{flex:1,padding:'12px',borderRadius:'14px',background:'rgba(30,41,59,.8)',color:'#94a3b8',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',letterSpacing:'.1em',textTransform:'uppercase',border:'1px solid #1e293b',cursor:'pointer'}}>← Retour</button>
+                                        <button disabled={!form.goal} onClick={()=>setStep(3)}
                                             style={{flex:2,padding:'12px',borderRadius:'14px',background:form.goal?'linear-gradient(135deg,#ea580c,#c2410c)':'#1e293b',color:form.goal?'white':'#64748b',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:form.goal?'pointer':'not-allowed'}}>
                                             Suivant →
                                         </button>
                                     </div>
                                 </div>
                             )}
-
-                            {/* STEP 3: CHALLENGER */}
-                            {step === 3 && (
+                            {step===3 && (
                                 <div className="fade-in" style={{display:'flex',flexDirection:'column',gap:'12px'}}>
-                                    <p style={{color:'#64748b',fontSize:'11px',fontWeight:500}}>Choisissez votre adversaire parmi vos contacts ONYX :</p>
-                                    {friends.length === 0 ? (
+                                    <p style={{color:'#64748b',fontSize:'11px'}}>Choisissez votre adversaire parmi vos contacts ONYX :</p>
+                                    {friends.length===0 ? (
                                         <div style={{textAlign:'center',padding:'32px 16px',background:'rgba(15,23,42,.8)',borderRadius:'16px',border:'1px solid #1e293b'}}>
                                             <div style={{fontSize:'32px',marginBottom:'8px'}} className="emoji-native">👥</div>
                                             <p style={{color:'#64748b',fontSize:'11px'}}>Ajoutez des amis dans ONYX CHAT pour les défier.</p>
@@ -846,38 +1102,35 @@ const CreateChallengeModal = ({ user, profile, friends, friendProfiles, onClose 
                                     ) : (
                                         <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
                                             {friends.map(f => {
-                                                const fd = friendProfiles[f.uid] || {};
-                                                const selected = form.challengedUid === f.uid;
+                                                const fd = friendProfiles[f.uid]||{};
+                                                const selected = form.challengedUid===f.uid;
                                                 return (
-                                                    <button key={f.uid} onClick={() => setForm(frm => ({...frm, challengedUid: f.uid}))}
+                                                    <button key={f.uid} onClick={()=>setForm(frm=>({...frm,challengedUid:f.uid}))}
                                                         style={{display:'flex',alignItems:'center',gap:'12px',padding:'12px',borderRadius:'14px',border:`1px solid ${selected?'#ea580c':'#1e293b'}`,background:selected?'rgba(234,88,12,.1)':'rgba(15,23,42,.8)',cursor:'pointer',textAlign:'left',transition:'all .15s'}}>
                                                         <img src={fd.photoURL||getAvatar(fd.displayName)} style={{width:'40px',height:'40px',borderRadius:'12px',objectFit:'cover'}}/>
                                                         <div style={{flex:1}}>
                                                             <p style={{fontWeight:700,fontSize:'13px',color:'white'}}>{fd.displayName||'Contact'}</p>
                                                             <p style={{fontSize:'9px',color:'#64748b',textTransform:'uppercase',letterSpacing:'.06em'}}>Membre APEX</p>
                                                         </div>
-                                                        {selected && <div style={{width:'20px',height:'20px',borderRadius:'50%',background:'#ea580c',display:'flex',alignItems:'center',justifyContent:'center'}}><Icon name="check" size={12} className="text-white"/></div>}
+                                                        {selected && <div style={{width:'20px',height:'20px',borderRadius:'50%',background:'#ea580c',display:'flex',alignItems:'center',justifyContent:'center'}}><Icon name="check" size={12}/></div>}
                                                     </button>
                                                 );
                                             })}
                                         </div>
                                     )}
-
-                                    {/* Summary */}
                                     {form.challengedUid && (
                                         <div style={{background:'rgba(234,88,12,.06)',border:'1px solid rgba(234,88,12,.2)',borderRadius:'14px',padding:'14px'}}>
                                             <p style={{color:'#ea580c',fontSize:'9px',fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',marginBottom:'8px'}}>Récap du défi</p>
                                             <div style={{display:'flex',gap:'12px',fontSize:'12px',color:'#cbd5e1'}}>
                                                 <span className="emoji-native">{SPORT_ICONS[form.sport]}</span>
-                                                <span style={{fontWeight:600}}>{form.title || selectedSport?.label}</span>
-                                                <span style={{marginLeft:'auto',fontFamily:'Syne,sans-serif',fontWeight:800,color:'#f97316'}}>{form.goal} {form.unit || selectedSport?.unit}</span>
+                                                <span style={{fontWeight:600}}>{form.title||selectedSport?.label}</span>
+                                                <span style={{marginLeft:'auto',fontFamily:'Syne,sans-serif',fontWeight:800,color:'#f97316'}}>{form.goal} {form.unit||selectedSport?.unit}</span>
                                             </div>
                                             {form.deadline && <p style={{fontSize:'10px',color:'#64748b',marginTop:'4px'}}>Avant le {new Date(form.deadline).toLocaleDateString('fr-FR',{day:'numeric',month:'long'})}</p>}
                                         </div>
                                     )}
-
                                     <div style={{display:'flex',gap:'8px'}}>
-                                        <button onClick={() => setStep(2)} style={{flex:1,padding:'12px',borderRadius:'14px',background:'rgba(30,41,59,.8)',color:'#94a3b8',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',letterSpacing:'.1em',textTransform:'uppercase',border:'1px solid #1e293b',cursor:'pointer'}}>← Retour</button>
+                                        <button onClick={()=>setStep(2)} style={{flex:1,padding:'12px',borderRadius:'14px',background:'rgba(30,41,59,.8)',color:'#94a3b8',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',letterSpacing:'.1em',textTransform:'uppercase',border:'1px solid #1e293b',cursor:'pointer'}}>← Retour</button>
                                         <button disabled={!form.challengedUid||loading} onClick={handleSubmit}
                                             style={{flex:2,padding:'12px',borderRadius:'14px',background:form.challengedUid&&!loading?'linear-gradient(135deg,#ea580c,#c2410c)':'#1e293b',color:form.challengedUid&&!loading?'white':'#64748b',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:form.challengedUid&&!loading?'pointer':'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
                                             {loading ? <><div style={{width:'14px',height:'14px',border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .7s linear infinite'}}/> Envoi...</> : '⚡ Lancer le défi'}
@@ -902,61 +1155,46 @@ const UpdateProgressModal = ({ challenge, user, onClose }) => {
     const handleUpdate = async () => {
         setLoading(true);
         const newVal = Number(value);
-        const updates = { [`progress.${user.uid}`]: newVal };
-
-        // Check if completed
-        const otherUid = challenge.createdBy === user.uid ? challenge.challengedUid : challenge.createdBy;
+        const otherUid = challenge.createdBy===user.uid ? challenge.challengedUid : challenge.createdBy;
         const otherProgress = challenge.progress?.[otherUid] || 0;
-
-        if (newVal >= challenge.goal) {
-            updates.status = 'completed';
-            updates.winner = user.uid;
-        } else if (otherProgress >= challenge.goal) {
-            updates.status = 'completed';
-            updates.winner = otherUid;
-        } else {
-            updates.status = 'active';
-        }
-
+        const updates = { [`progress.${user.uid}`]: newVal };
+        if (newVal >= challenge.goal) { updates.status='completed'; updates.winner=user.uid; }
+        else if (otherProgress >= challenge.goal) { updates.status='completed'; updates.winner=otherUid; }
+        else { updates.status='active'; }
         await db.collection(APEX_APP_ID).doc(challenge.id).update(updates);
-        setLoading(false);
-        onClose();
+        setLoading(false); onClose();
     };
 
-    const pct = Math.min(100, Math.round((value / challenge.goal) * 100));
+    const pct = Math.min(100, Math.round((value/challenge.goal)*100));
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-sheet" style={{padding:'24px',borderRadius:'28px'}} onClick={e => e.stopPropagation()}>
+            <div className="modal-sheet" style={{padding:'24px',borderRadius:'28px'}} onClick={e=>e.stopPropagation()}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'20px'}}>
                     <div>
                         <p style={{color:'#ea580c',fontSize:'9px',fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase'}}>Mise à jour</p>
                         <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginTop:'2px'}}>{challenge.title}</h3>
                     </div>
-                    <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'12px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
-                        <Icon name="x" size={16}/>
-                    </button>
+                    <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'12px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}><Icon name="x" size={16}/></button>
                 </div>
-
                 <div style={{textAlign:'center',marginBottom:'24px'}}>
                     <div style={{fontSize:'40px',marginBottom:'4px'}} className="emoji-native">{SPORT_ICONS[challenge.sport]}</div>
                     <div style={{display:'flex',alignItems:'baseline',justifyContent:'center',gap:'6px'}}>
-                        <input type="number" min="0" max={challenge.goal * 2}
+                        <input type="number" min="0" max={challenge.goal*2}
                             style={{background:'transparent',border:'none',fontSize:'48px',fontFamily:'Syne,sans-serif',fontWeight:800,color:'#f97316',textAlign:'center',width:'160px'}}
-                            value={value} onChange={e => setValue(e.target.value)}/>
+                            value={value} onChange={e=>setValue(e.target.value)}/>
                         <span style={{color:'#64748b',fontSize:'14px',fontWeight:600}}>/{challenge.goal} {challenge.unit}</span>
                     </div>
                     <div className="progress-bar" style={{marginTop:'12px'}}>
-                        <div className="progress-fill" style={{'--prog-w': pct+'%'}}/>
+                        <div className="progress-fill" style={{'--prog-w':pct+'%'}}/>
                     </div>
                     <p style={{color:'#64748b',fontSize:'11px',marginTop:'6px'}}>{pct}% accompli</p>
                 </div>
-
                 <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'8px',marginBottom:'20px'}}>
                     {[25,50,75,100].map(p => {
-                        const v = Math.round((challenge.goal * p) / 100);
+                        const v = Math.round((challenge.goal*p)/100);
                         return (
-                            <button key={p} onClick={() => setValue(v)}
+                            <button key={p} onClick={()=>setValue(v)}
                                 style={{padding:'10px 4px',borderRadius:'12px',border:'1px solid #1e293b',background:'rgba(15,23,42,.8)',cursor:'pointer',textAlign:'center'}}>
                                 <p style={{color:'#f97316',fontSize:'12px',fontWeight:800,fontFamily:'Syne,sans-serif'}}>{p}%</p>
                                 <p style={{color:'#64748b',fontSize:'9px',marginTop:'2px'}}>{v} {challenge.unit}</p>
@@ -964,7 +1202,6 @@ const UpdateProgressModal = ({ challenge, user, onClose }) => {
                         );
                     })}
                 </div>
-
                 <button disabled={loading} onClick={handleUpdate}
                     style={{width:'100%',padding:'14px',borderRadius:'14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
                     {loading ? <><div style={{width:'14px',height:'14px',border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .7s linear infinite'}}/> Sauvegarde...</> : '✓ Enregistrer ma progression'}
@@ -980,23 +1217,18 @@ const ChallengeCard = ({ challenge, user, onUpdate, onAccept, onDecline }) => {
     const otherName = isCreator ? challenge.challengedName : challenge.createdByName;
     const otherPhoto = isCreator ? challenge.challengedPhoto : challenge.createdByPhoto;
     const otherUid = isCreator ? challenge.challengedUid : challenge.createdBy;
-
     const myProg = challenge.progress?.[user.uid] || 0;
     const otherProg = challenge.progress?.[otherUid] || 0;
     const myPct = progressPct(myProg, challenge.goal);
     const otherPct = progressPct(otherProg, challenge.goal);
     const dl = daysLeft(challenge.deadline);
-
-    const isWon = challenge.status === 'completed' && challenge.winner === user.uid;
-    const isLost = challenge.status === 'completed' && challenge.winner === otherUid;
-    const isPending = challenge.status === 'pending';
-    const isActive = challenge.status === 'active';
-
-    const cardClass = `challenge-card ${isWon?'won':''} ${isLost?'lost':''} ${isCreator&&!isWon&&!isLost?'mine':''}`;
+    const isWon = challenge.status==='completed' && challenge.winner===user.uid;
+    const isLost = challenge.status==='completed' && challenge.winner===otherUid;
+    const isPending = challenge.status==='pending';
+    const isActive = challenge.status==='active';
 
     return (
-        <div className={cardClass} style={{padding:'16px',marginBottom:'12px'}}>
-            {/* Header */}
+        <div className={`challenge-card ${isWon?'won':''} ${isLost?'lost':''} ${isCreator&&!isWon&&!isLost?'mine':''}`} style={{padding:'16px',marginBottom:'12px'}}>
             <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'14px'}}>
                 <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
                     <div style={{width:'36px',height:'36px',borderRadius:'10px',background:'rgba(234,88,12,.15)',border:'1px solid rgba(234,88,12,.25)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'18px'}} className="emoji-native">
@@ -1005,72 +1237,55 @@ const ChallengeCard = ({ challenge, user, onUpdate, onAccept, onDecline }) => {
                     <div>
                         <h4 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',color:'white',lineHeight:1.2}}>{challenge.title}</h4>
                         <p style={{fontSize:'10px',color:'#64748b',marginTop:'2px'}}>
-                            {isCreator ? 'Vous avez défié' : 'Défié par'} <strong style={{color:'#94a3b8'}}>{otherName}</strong>
+                            {isCreator?'Vous avez défié':'Défié par'} <strong style={{color:'#94a3b8'}}>{otherName}</strong>
                         </p>
                     </div>
                 </div>
                 <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'4px'}}>
                     {isWon && <span className="badge badge-green"><Icon name="trophy" size={9}/>Victoire</span>}
                     {isLost && <span className="badge badge-red">Défaite</span>}
-                    {isPending && !isCreator && <span className="badge badge-yellow">En attente</span>}
-                    {isPending && isCreator && <span className="badge badge-slate">Envoyé</span>}
+                    {isPending&&!isCreator && <span className="badge badge-yellow">En attente</span>}
+                    {isPending&&isCreator && <span className="badge badge-slate">Envoyé</span>}
                     {isActive && <span className="badge badge-orange"><Icon name="flame" size={9}/>En cours</span>}
-                    {dl !== null && isActive && <span style={{fontSize:'9px',color:dl<=2?'#f87171':'#64748b',fontWeight:700}}>J-{dl}</span>}
+                    {dl!==null&&isActive && <span style={{fontSize:'9px',color:dl<=2?'#f87171':'#64748b',fontWeight:700}}>J-{dl}</span>}
                 </div>
             </div>
-
-            {/* Goal */}
             <div style={{background:'rgba(2,6,23,.5)',borderRadius:'12px',padding:'10px 12px',marginBottom:'12px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                 <span style={{color:'#64748b',fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.08em'}}>Objectif</span>
                 <span style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'#f97316'}}>{challenge.goal} <span style={{fontSize:'11px',color:'#ea580c'}}>{challenge.unit}</span></span>
             </div>
-
-            {/* VS Progress */}
-            {(isActive || isWon || isLost) && (
+            {(isActive||isWon||isLost) && (
                 <div style={{marginBottom:'12px'}}>
-                    {/* Me */}
-                    <div style={{marginBottom:'8px'}}>
-                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'5px'}}>
-                            <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
-                                <img src={user.photoURL||getAvatar(user.displayName||'Me')} style={{width:'20px',height:'20px',borderRadius:'6px',objectFit:'cover'}}/>
-                                <span style={{fontSize:'10px',fontWeight:700,color:'#e2e8f0'}}>Moi</span>
+                    {[{uid:user.uid,photo:user.photoURL,name:'Moi',prog:myProg,pct:myPct,color:'#f97316',trackColor:'linear-gradient(90deg,#ea580c,#f97316)'},
+                      {uid:otherUid,photo:otherPhoto,name:otherName,prog:otherProg,pct:otherPct,color:'#64748b',trackColor:'linear-gradient(90deg,#475569,#64748b)'}].map(p => (
+                        <div key={p.uid} style={{marginBottom:'8px'}}>
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'5px'}}>
+                                <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                                    <img src={p.photo||getAvatar(p.name)} style={{width:'20px',height:'20px',borderRadius:'6px',objectFit:'cover'}}/>
+                                    <span style={{fontSize:'10px',fontWeight:700,color:'#e2e8f0'}}>{p.name}</span>
+                                </div>
+                                <span style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'12px',color:p.color}}>{p.prog}/{challenge.goal} {challenge.unit}</span>
                             </div>
-                            <span style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'12px',color:'#f97316'}}>{myProg}/{challenge.goal} {challenge.unit}</span>
-                        </div>
-                        <div className="progress-bar">
-                            <div className="progress-fill" style={{'--prog-w':myPct+'%'}}/>
-                        </div>
-                    </div>
-                    {/* Other */}
-                    <div>
-                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'5px'}}>
-                            <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
-                                <img src={otherPhoto||getAvatar(otherName)} style={{width:'20px',height:'20px',borderRadius:'6px',objectFit:'cover'}}/>
-                                <span style={{fontSize:'10px',fontWeight:700,color:'#94a3b8'}}>{otherName}</span>
+                            <div className="progress-bar">
+                                <div style={{height:'100%',borderRadius:'3px',background:p.trackColor,width:p.pct+'%',transition:'width 1s cubic-bezier(.16,1,.3,1)'}}/>
                             </div>
-                            <span style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'12px',color:'#64748b'}}>{otherProg}/{challenge.goal} {challenge.unit}</span>
                         </div>
-                        <div className="progress-bar">
-                            <div style={{height:'100%',borderRadius:'3px',background:'linear-gradient(90deg,#475569,#64748b)',width:otherPct+'%',transition:'width 1s cubic-bezier(.16,1,.3,1)'}}/>
-                        </div>
-                    </div>
+                    ))}
                 </div>
             )}
-
-            {/* Actions */}
-            {isPending && !isCreator && (
+            {isPending&&!isCreator && (
                 <div style={{display:'flex',gap:'8px'}}>
-                    <button onClick={() => onDecline(challenge.id)} style={{flex:1,padding:'10px',borderRadius:'12px',background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',color:'#f87171',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>Refuser</button>
-                    <button onClick={() => onAccept(challenge.id)} style={{flex:2,padding:'10px',borderRadius:'12px',background:'linear-gradient(135deg,#ea580c,#c2410c)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>⚡ Accepter</button>
+                    <button onClick={()=>onDecline(challenge.id)} style={{flex:1,padding:'10px',borderRadius:'12px',background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',color:'#f87171',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>Refuser</button>
+                    <button onClick={()=>onAccept(challenge.id)} style={{flex:2,padding:'10px',borderRadius:'12px',background:'linear-gradient(135deg,#ea580c,#c2410c)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>⚡ Accepter</button>
                 </div>
             )}
             {isActive && (
-                <button onClick={() => onUpdate(challenge)}
+                <button onClick={()=>onUpdate(challenge)}
                     style={{width:'100%',padding:'10px',borderRadius:'12px',background:'rgba(234,88,12,.1)',border:'1px solid rgba(234,88,12,.25)',color:'#f97316',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
                     <Icon name="edit" size={12}/>Mettre à jour ma progression
                 </button>
             )}
-            {(isWon || isLost) && (
+            {(isWon||isLost) && (
                 <div style={{textAlign:'center',padding:'8px',background:isWon?'rgba(34,197,94,.06)':'rgba(239,68,68,.06)',borderRadius:'12px',border:`1px solid ${isWon?'rgba(34,197,94,.2)':'rgba(239,68,68,.15)'}`}}>
                     <span style={{fontSize:'18px'}} className="emoji-native">{isWon?'🏆':'💪'}</span>
                     <p style={{fontSize:'10px',color:isWon?'#4ade80':'#f87171',fontWeight:700,marginTop:'2px'}}>{isWon?'Félicitations ! Défi remporté !':'Bon courage pour la prochaine !'}</p>
@@ -1084,32 +1299,26 @@ const ChallengeCard = ({ challenge, user, onUpdate, onAccept, onDecline }) => {
 const LeaderboardTab = ({ user, friends, friendProfiles, challenges }) => {
     const scores = useMemo(() => {
         const map = {};
-        const allUids = [user.uid, ...friends.map(f => f.uid)];
-        allUids.forEach(uid => { map[uid] = { wins: 0, total: 0, pts: 0 }; });
-
+        const allUids = [user.uid, ...friends.map(f=>f.uid)];
+        allUids.forEach(uid => { map[uid] = {wins:0,total:0,pts:0}; });
         challenges.forEach(c => {
-            if (c.status === 'completed' && c.winner) {
+            if (c.status==='completed'&&c.winner) {
                 allUids.forEach(uid => {
-                    if (c.createdBy === uid || c.challengedUid === uid) {
-                        map[uid] = map[uid] || { wins: 0, total: 0, pts: 0 };
+                    if (c.createdBy===uid||c.challengedUid===uid) {
+                        map[uid]=map[uid]||{wins:0,total:0,pts:0};
                         map[uid].total++;
-                        if (c.winner === uid) { map[uid].wins++; map[uid].pts += 100; }
-                        else map[uid].pts += 10;
+                        if (c.winner===uid){map[uid].wins++;map[uid].pts+=100;}
+                        else map[uid].pts+=10;
                     }
                 });
             }
         });
-
-        return Object.entries(map)
-            .map(([uid, s]) => {
-                const isMe = uid === user.uid;
-                const p = isMe ? { displayName: 'Moi', photoURL: user.photoURL||getAvatar('Moi') } : (friendProfiles[uid] || {});
-                return { uid, ...s, displayName: p.displayName||'Joueur', photoURL: p.photoURL||getAvatar(p.displayName) };
-            })
-            .sort((a,b) => b.pts - a.pts || b.wins - a.wins);
-    }, [challenges, friends, friendProfiles, user]);
-
-    const medals = ['🥇','🥈','🥉'];
+        return Object.entries(map).map(([uid,s]) => {
+            const isMe=uid===user.uid;
+            const p=isMe?{displayName:'Moi',photoURL:user.photoURL||getAvatar('Moi')}:(friendProfiles[uid]||{});
+            return {uid,...s,displayName:p.displayName||'Joueur',photoURL:p.photoURL||getAvatar(p.displayName)};
+        }).sort((a,b)=>b.pts-a.pts||b.wins-a.wins);
+    },[challenges,friends,friendProfiles,user]);
 
     return (
         <div>
@@ -1118,15 +1327,14 @@ const LeaderboardTab = ({ user, friends, friendProfiles, challenges }) => {
                 <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',letterSpacing:'.1em',textTransform:'uppercase'}}>Classement</h3>
                 <p style={{color:'#64748b',fontSize:'11px',marginTop:'4px'}}>Basé sur les défis complétés</p>
             </div>
-
-            {scores.length === 0 ? (
+            {scores.length===0 ? (
                 <div style={{textAlign:'center',padding:'32px',color:'#64748b'}}>Aucun défi complété encore.</div>
             ) : (
                 <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
-                    {scores.map((s, i) => (
+                    {scores.map((s,i) => (
                         <div key={s.uid} className="fade-in" style={{background:'rgba(15,23,42,.9)',border:`1px solid ${s.uid===user.uid?'rgba(234,88,12,.3)':'rgba(30,41,59,.8)'}`,borderRadius:'16px',padding:'14px 16px',display:'flex',alignItems:'center',gap:'12px',animationDelay:`${i*0.05}s`}}>
                             <div style={{width:'28px',textAlign:'center',fontSize:'20px'}} className="emoji-native">
-                                {medals[i] || <span style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'14px',color:'#475569'}}>#{i+1}</span>}
+                                {['🥇','🥈','🥉'][i] || <span style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'14px',color:'#475569'}}>#{i+1}</span>}
                             </div>
                             <img src={s.photoURL} style={{width:'36px',height:'36px',borderRadius:'10px',objectFit:'cover'}}/>
                             <div style={{flex:1}}>
@@ -1146,33 +1354,30 @@ const LeaderboardTab = ({ user, friends, friendProfiles, challenges }) => {
 };
 
 // ── PROFILE TAB ──────────────────────────────────────────────────────────
-const ProfileTab = ({ user, profile, setProfile, challenges }) => {
+const ProfileTab = ({ user, profile, setProfile, challenges, onShowRights, onShowPrivacy, onShowTerms, onManageConsent }) => {
     const [editing, setEditing] = useState(false);
     const [nameInput, setNameInput] = useState(profile.displayName||'');
     const [saving, setSaving] = useState(false);
     const [copied, setCopied] = useState(false);
 
     const myStats = useMemo(() => {
-        const mine = challenges.filter(c => c.createdBy === user.uid || c.challengedUid === user.uid);
-        const wins = mine.filter(c => c.status==='completed' && c.winner===user.uid).length;
-        const losses = mine.filter(c => c.status==='completed' && c.winner && c.winner!==user.uid).length;
-        const active = mine.filter(c => c.status==='active').length;
-        return { total: mine.length, wins, losses, active };
-    }, [challenges, user.uid]);
+        const mine = challenges.filter(c=>c.createdBy===user.uid||c.challengedUid===user.uid);
+        return {
+            total: mine.length,
+            wins: mine.filter(c=>c.status==='completed'&&c.winner===user.uid).length,
+            losses: mine.filter(c=>c.status==='completed'&&c.winner&&c.winner!==user.uid).length,
+            active: mine.filter(c=>c.status==='active').length,
+        };
+    },[challenges,user.uid]);
 
     const saveProfile = async () => {
         setSaving(true);
-        await db.collection('artifacts').doc(ONYX_APP_ID).collection('public').doc('data').collection('profiles').doc(user.uid).update({ displayName: nameInput });
-        setProfile(p => ({...p, displayName: nameInput}));
-        setEditing(false);
-        setSaving(false);
+        await db.collection('artifacts').doc(ONYX_APP_ID).collection('public').doc('data').collection('profiles').doc(user.uid).update({displayName:nameInput});
+        setProfile(p=>({...p,displayName:nameInput}));
+        setEditing(false); setSaving(false);
     };
 
-    const copyId = () => {
-        navigator.clipboard.writeText(user.uid);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
+    const copyId = () => { navigator.clipboard.writeText(user.uid); setCopied(true); setTimeout(()=>setCopied(false),2000); };
 
     return (
         <div>
@@ -1184,40 +1389,37 @@ const ProfileTab = ({ user, profile, setProfile, challenges }) => {
                 </div>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'4px'}}>
                     {editing ? (
-                        <input value={nameInput} onChange={e => setNameInput(e.target.value)}
+                        <input value={nameInput} onChange={e=>setNameInput(e.target.value)}
                             style={{background:'rgba(2,6,23,.7)',border:'1px solid #ea580c',borderRadius:'10px',padding:'6px 12px',fontSize:'16px',fontFamily:'Syne,sans-serif',fontWeight:800,color:'white',textAlign:'center'}}/>
                     ) : (
                         <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'20px',color:'white'}}>{profile.displayName}</h2>
                     )}
                     {editing ? (
-                        <button onClick={saveProfile} disabled={saving} style={{padding:'6px',background:'#ea580c',borderRadius:'8px',border:'none',cursor:'pointer',display:'flex'}}><Icon name="check" size={14} className="text-white"/></button>
+                        <button onClick={saveProfile} disabled={saving} style={{padding:'6px',background:'#ea580c',borderRadius:'8px',border:'none',cursor:'pointer',display:'flex'}}><Icon name="check" size={14}/></button>
                     ) : (
-                        <button onClick={() => setEditing(true)} style={{padding:'6px',background:'rgba(30,41,59,.8)',borderRadius:'8px',border:'1px solid #1e293b',cursor:'pointer',display:'flex',color:'#64748b'}}><Icon name="edit" size={14}/></button>
+                        <button onClick={()=>setEditing(true)} style={{padding:'6px',background:'rgba(30,41,59,.8)',borderRadius:'8px',border:'1px solid #1e293b',cursor:'pointer',display:'flex',color:'#64748b'}}><Icon name="edit" size={14}/></button>
                     )}
                 </div>
                 <p style={{color:'#64748b',fontSize:'11px'}}>{user.email}</p>
-
-                {/* ID */}
                 <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginTop:'12px',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'12px',padding:'8px 12px'}}>
                     <p style={{fontFamily:'monospace',fontSize:'10px',color:'#64748b',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1,textAlign:'left'}}>{user.uid}</p>
                     <button onClick={copyId} style={{padding:'4px',background:'transparent',border:'none',cursor:'pointer',color:copied?'#4ade80':'#64748b',display:'flex',flexShrink:0}}>
-                        {copied ? <Icon name="check" size={14}/> : <Icon name="copy" size={14}/>}
+                        {copied?<Icon name="check" size={14}/>:<Icon name="copy" size={14}/>}
                     </button>
                 </div>
-                <p style={{fontSize:'9px',color:'#475569',marginTop:'4px'}}>Partagez votre ID pour être défié</p>
             </div>
 
             {/* Stats */}
             <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'8px',marginBottom:'16px'}}>
                 {[
-                    { label:'Total défis', value: myStats.total, icon:'target', color:'#94a3b8' },
-                    { label:'Victoires', value: myStats.wins, icon:'trophy', color:'#f97316' },
-                    { label:'Défaites', value: myStats.losses, icon:'zap', color:'#f87171' },
-                    { label:'En cours', value: myStats.active, icon:'flame', color:'#60a5fa' },
+                    {label:'Total défis',value:myStats.total,icon:'target',color:'#94a3b8'},
+                    {label:'Victoires',value:myStats.wins,icon:'trophy',color:'#f97316'},
+                    {label:'Défaites',value:myStats.losses,icon:'zap',color:'#f87171'},
+                    {label:'En cours',value:myStats.active,icon:'flame',color:'#60a5fa'},
                 ].map(s => (
                     <div key={s.label} className="stat-card">
                         <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px'}}>
-                            <Icon name={s.icon} size={14} style={{color:s.color}}/>
+                            <Icon name={s.icon} size={14}/>
                             <p style={{color:'#64748b',fontSize:'9px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.08em'}}>{s.label}</p>
                         </div>
                         <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'28px',color:s.color}}>{s.value}</p>
@@ -1225,14 +1427,13 @@ const ProfileTab = ({ user, profile, setProfile, challenges }) => {
                 ))}
             </div>
 
-            {/* Win rate */}
-            {myStats.total > 0 && (
+            {myStats.total>0 && (
                 <div style={{background:'rgba(15,23,42,.9)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'18px',padding:'16px',display:'flex',alignItems:'center',gap:'16px',marginBottom:'16px'}}>
                     <div style={{position:'relative',width:'64px',height:'64px',flexShrink:0}}>
                         <svg viewBox="0 0 64 64" width="64" height="64" className="ring-svg">
                             <circle cx="32" cy="32" r="26" className="ring-track"/>
                             <circle cx="32" cy="32" r="26" className="ring-fill"
-                                style={{'--ring-dash':'163.4','--ring-offset':163.4*(1 - myStats.wins/Math.max(myStats.total-0,1)),stroke:'#f97316'}}/>
+                                style={{'--ring-dash':'163.4','--ring-offset':163.4*(1-myStats.wins/Math.max(myStats.total,1)),stroke:'#f97316'}}/>
                         </svg>
                         <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',color:'#f97316'}}>
                             {Math.round((myStats.wins/Math.max(myStats.total,1))*100)}%
@@ -1245,18 +1446,61 @@ const ProfileTab = ({ user, profile, setProfile, challenges }) => {
                 </div>
             )}
 
-            <button onClick={() => auth.signOut()}
-                style={{width:'100%',padding:'14px',borderRadius:'14px',background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',color:'#f87171',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
+            {/* ── Section RGPD ── */}
+            <div style={{background:'rgba(15,23,42,.9)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'18px',padding:'16px',marginBottom:'12px'}}>
+                <p style={{color:'#f97316',fontSize:'9px',fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase',marginBottom:'12px',display:'flex',alignItems:'center',gap:'6px'}}>
+                    <Icon name="shield" size={12}/>Confidentialité & RGPD
+                </p>
+                <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+                    {[
+                        {label:'Mes droits RGPD', desc:'Accès, export, suppression, portabilité', onClick:onShowRights, icon:'download'},
+                        {label:'Gérer mes préférences', desc:'Modifier mes choix de consentement', onClick:onManageConsent, icon:'settings'},
+                        {label:'Politique de confidentialité', desc:'Version 2.0 · Mai 2026', onClick:onShowPrivacy, icon:'shield'},
+                        {label:'Conditions générales', desc:'Version 2.0 · Mai 2026', onClick:onShowTerms, icon:'alertTriangle'},
+                    ].map(item => (
+                        <button key={item.label} onClick={item.onClick}
+                            style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px',background:'rgba(2,6,23,.5)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'12px',cursor:'pointer',textAlign:'left',width:'100%'}}>
+                            <div style={{width:'28px',height:'28px',borderRadius:'8px',background:'rgba(234,88,12,.1)',border:'1px solid rgba(234,88,12,.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,color:'#f97316'}}>
+                                <Icon name={item.icon} size={13}/>
+                            </div>
+                            <div style={{flex:1}}>
+                                <p style={{fontSize:'11px',fontWeight:700,color:'white'}}>{item.label}</p>
+                                <p style={{fontSize:'9px',color:'#64748b',marginTop:'1px'}}>{item.desc}</p>
+                            </div>
+                            <Icon name="arrowRight" size={12} style={{color:'#475569',flexShrink:0}}/>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <button onClick={()=>auth.signOut()}
+                style={{width:'100%',padding:'14px',borderRadius:'14px',background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',color:'#f87171',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'32px'}}>
                 <Icon name="logout" size={14}/>Déconnexion
             </button>
         </div>
     );
 };
 
-// ── MAIN APP ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+//  APP PRINCIPALE — orchestration RGPD complète
+// ══════════════════════════════════════════════════════════════════════════
 function App() {
+    // ── États RGPD ──
+    const [consentState, setConsentState] = useState(() => loadConsent()); // null = pas encore consenti
+    const [showConsentBanner, setShowConsentBanner] = useState(false);
+    const [showCustomizer, setShowCustomizer] = useState(false);
+    const [showPrivacy, setShowPrivacy] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
+    const [showRights, setShowRights] = useState(false);
+    const [showAgeGate, setShowAgeGate] = useState(false);
+    const [ageConfirmed, setAgeConfirmed] = useState(() => {
+        try { const c=loadConsent(); return c?.ageConfirmed===true; } catch { return false; }
+    });
+    const [firebaseReady, setFirebaseReady] = useState(false);
+
+    // ── États App ──
     const [user, setUser] = useState(null);
-    const [profile, setProfile] = useState({ displayName:'', photoURL:'' });
+    const [profile, setProfile] = useState({displayName:'',photoURL:''});
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState('home');
     const [challenges, setChallenges] = useState([]);
@@ -1264,224 +1508,325 @@ function App() {
     const [friendProfiles, setFriendProfiles] = useState({});
     const [showCreate, setShowCreate] = useState(false);
     const [updateTarget, setUpdateTarget] = useState(null);
-    const [filter, setFilter] = useState('all'); // all | active | pending | completed
+    const [filter, setFilter] = useState('all');
 
-    // Auth
+    // ── Flux RGPD : vérification âge → bannière → Firebase ──
     useEffect(() => {
-        return auth.onAuthStateChanged(async (u) => {
-            if (u) {
-                setUser(u);
-                const ref = db.collection('artifacts').doc(ONYX_APP_ID).collection('public').doc('data').collection('profiles').doc(u.uid);
-                const unsub = ref.onSnapshot(doc => {
-                    if (doc.exists) setProfile(doc.data());
-                    else {
-                        const np = { uid: u.uid, displayName: u.email.split('@')[0], photoURL: getAvatar(u.email.split('@')[0]), createdAt: firebase.firestore.FieldValue.serverTimestamp() };
-                        ref.set(np);
-                        setProfile(np);
-                    }
-                });
-                return unsub;
-            } else setUser(null);
+        if (!ageConfirmed) {
+            setShowAgeGate(true);
+            setLoading(false);
+            return;
+        }
+        if (!consentState) {
+            setShowConsentBanner(true);
+            setLoading(false);
+            return;
+        }
+        // Consentement acquis → charger Firebase
+        loadFirebase().then(() => {
+            setFirebaseReady(true);
+        }).catch(err => {
+            console.error('Firebase load error:', err);
             setLoading(false);
         });
-    }, []);
+    }, [ageConfirmed, consentState]);
 
-    // Friends from ONYX
+    // ── Auth (seulement après Firebase chargé) ──
     useEffect(() => {
-        if (!user) return;
+        if (!firebaseReady) return;
+        const unsub = auth.onAuthStateChanged(async (u) => {
+            if (u) {
+                setUser(u);
+                const ref = db.collection('artifacts').doc(ONYX_APP_ID)
+                    .collection('public').doc('data').collection('profiles').doc(u.uid);
+                const profileUnsub = ref.onSnapshot(doc => {
+                    if (doc.exists) setProfile(doc.data());
+                    else {
+                        const np = {uid:u.uid,displayName:u.email.split('@')[0],photoURL:getAvatar(u.email.split('@')[0]),createdAt:window.firebase.firestore.FieldValue.serverTimestamp()};
+                        ref.set(np); setProfile(np);
+                    }
+                });
+                return profileUnsub;
+            } else { setUser(null); }
+            setLoading(false);
+        });
+        return unsub;
+    }, [firebaseReady]);
+
+    // ── Friends & challenges (inchangé) ──
+    useEffect(() => {
+        if (!user||!firebaseReady) return;
         const unsub = db.collection('artifacts').doc(ONYX_APP_ID).collection('users').doc(user.uid).collection('contacts').doc('list')
             .onSnapshot(doc => { if (doc.exists) setFriends(doc.data().friends||[]); else setFriends([]); });
         return unsub;
-    }, [user]);
+    },[user,firebaseReady]);
 
-    // Friend profiles
     useEffect(() => {
-        if (!user || friends.length === 0) return;
+        if (!user||friends.length===0||!firebaseReady) return;
         const unsubs = friends.map(f =>
             db.collection('artifacts').doc(ONYX_APP_ID).collection('public').doc('data').collection('profiles').doc(f.uid)
-                .onSnapshot(doc => { if (doc.exists) setFriendProfiles(p => ({...p,[f.uid]:doc.data()})); })
+                .onSnapshot(doc => { if (doc.exists) setFriendProfiles(p=>({...p,[f.uid]:doc.data()})); })
         );
         setLoading(false);
-        return () => unsubs.forEach(u => u());
-    }, [friends, user]);
+        return () => unsubs.forEach(u=>u());
+    },[friends,user,firebaseReady]);
 
-    // Challenges
     useEffect(() => {
-        if (!user) return;
-        const unsub = db.collection(APEX_APP_ID)
-            .where('createdBy', '==', user.uid)
+        if (!user||!firebaseReady) return;
+        const unsub = db.collection(APEX_APP_ID).where('createdBy','==',user.uid)
             .onSnapshot(snap => {
-                const mine = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const mine = snap.docs.map(d=>({id:d.id,...d.data()}));
                 setChallenges(prev => {
-                    const others = prev.filter(c => c.createdBy !== user.uid);
-                    return [...mine, ...others].sort((a,b) => {
-                        const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-                        const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-                        return tb - ta;
-                    });
+                    const others=prev.filter(c=>c.createdBy!==user.uid);
+                    return [...mine,...others].sort((a,b)=>(b.createdAt?.toMillis?.()??0)-(a.createdAt?.toMillis?.()??0));
                 });
             });
-        const unsub2 = db.collection(APEX_APP_ID)
-            .where('challengedUid', '==', user.uid)
+        const unsub2 = db.collection(APEX_APP_ID).where('challengedUid','==',user.uid)
             .onSnapshot(snap => {
-                const theirs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const theirs = snap.docs.map(d=>({id:d.id,...d.data()}));
                 setChallenges(prev => {
-                    const mine = prev.filter(c => c.challengedUid !== user.uid);
-                    return [...mine, ...theirs].sort((a,b) => {
-                        const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-                        const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-                        return tb - ta;
-                    });
+                    const mine=prev.filter(c=>c.challengedUid!==user.uid);
+                    return [...mine,...theirs].sort((a,b)=>(b.createdAt?.toMillis?.()??0)-(a.createdAt?.toMillis?.()??0));
                 });
             });
         setLoading(false);
-        return () => { unsub(); unsub2(); };
-    }, [user]);
+        return ()=>{ unsub(); unsub2(); };
+    },[user,firebaseReady]);
+
+    // ── Handlers RGPD ──
+    const handleAgeConfirm = () => {
+        setAgeConfirmed(true);
+        setShowAgeGate(false);
+        setShowConsentBanner(true);
+    };
+    const handleAgeDeny = () => {
+        setShowAgeGate(false);
+        // Afficher un écran de refus mineurs
+        setLoading(false);
+    };
+
+    const handleAcceptAll = () => {
+        const c = saveConsent({functional:true,analytics:true,ageConfirmed:true});
+        setConsentState(c);
+        setShowConsentBanner(false);
+    };
+    const handleRefuseAll = () => {
+        // Refus : données essentielles seulement (nécessaires au fonctionnement)
+        const c = saveConsent({functional:false,analytics:false,ageConfirmed:true});
+        setConsentState(c);
+        setShowConsentBanner(false);
+    };
+    const handleCustomSave = (prefs) => {
+        const c = saveConsent({...prefs,ageConfirmed:true});
+        setConsentState(c);
+        setShowConsentBanner(false);
+        setShowCustomizer(false);
+    };
+    const handleManageConsent = () => {
+        setShowConsentBanner(true);
+    };
 
     const acceptChallenge = async (id) => {
-        await db.collection(APEX_APP_ID).doc(id).update({ status: 'active', accepted: true });
+        await db.collection(APEX_APP_ID).doc(id).update({status:'active',accepted:true});
     };
     const declineChallenge = async (id) => {
-        await db.collection(APEX_APP_ID).doc(id).update({ status: 'declined' });
+        await db.collection(APEX_APP_ID).doc(id).update({status:'declined'});
     };
 
     const filteredChallenges = useMemo(() => {
-        if (filter === 'all') return challenges.filter(c => c.status !== 'declined');
-        if (filter === 'active') return challenges.filter(c => c.status === 'active');
-        if (filter === 'pending') return challenges.filter(c => c.status === 'pending');
-        if (filter === 'completed') return challenges.filter(c => c.status === 'completed');
-        return challenges;
-    }, [challenges, filter]);
+        if (filter==='all') return challenges.filter(c=>c.status!=='declined');
+        return challenges.filter(c=>c.status===filter);
+    },[challenges,filter]);
 
-    const pendingCount = challenges.filter(c => c.status === 'pending' && c.challengedUid === user?.uid).length;
-    const activeCount = challenges.filter(c => c.status === 'active').length;
+    const pendingCount = challenges.filter(c=>c.status==='pending'&&c.challengedUid===user?.uid).length;
+    const activeCount = challenges.filter(c=>c.status==='active').length;
 
-    if (loading) return (
-        <div style={{height:'100dvh',display:'flex',alignItems:'center',justifyContent:'center',background:'#020617'}}>
-            <div style={{width:'40px',height:'40px',border:'3px solid rgba(234,88,12,.3)',borderTopColor:'#f97316',borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
+    // ══════════════════════════════════════════════════════════════════
+    //  RENDUS CONDITIONNELS RGPD
+    // ══════════════════════════════════════════════════════════════════
+
+    // Page légales (toujours accessibles)
+    if (showPrivacy) return <PrivacyPage onClose={()=>setShowPrivacy(false)}/>;
+    if (showTerms) return <TermsPage onClose={()=>setShowTerms(false)}/>;
+
+    // Vérification d'âge (priorité maximale)
+    if (showAgeGate) return <AgeGate onConfirm={handleAgeConfirm} onDeny={handleAgeDeny}/>;
+
+    // Écran de refus mineurs
+    if (!ageConfirmed && !showAgeGate) return (
+        <div style={{height:'100dvh',background:'#020617',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px',textAlign:'center'}}>
+            <div className="fade-in">
+                <div style={{fontSize:'48px',marginBottom:'16px'}} className="emoji-native">🔒</div>
+                <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'18px',color:'white',marginBottom:'8px'}}>Accès non autorisé</h2>
+                <p style={{color:'#64748b',fontSize:'12px',lineHeight:1.7,maxWidth:'280px'}}>
+                    APEX est réservé aux personnes âgées de 16 ans ou plus.<br/>
+                    Si vous êtes mineur, veuillez quitter cette application.
+                </p>
+                <button onClick={()=>setShowAgeGate(true)}
+                    style={{marginTop:'20px',padding:'12px 24px',background:'rgba(30,41,59,.8)',border:'1px solid #1e293b',borderRadius:'12px',color:'#94a3b8',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>
+                    J'ai en réalité 16 ans ou plus
+                </button>
+            </div>
         </div>
     );
-    if (!user) return <AuthScreen/>;
+
+    // Spinner pendant chargement Firebase
+    if (loading && consentState && !firebaseReady) return (
+        <div style={{height:'100dvh',display:'flex',alignItems:'center',justifyContent:'center',background:'#020617',flexDirection:'column',gap:'16px'}}>
+            <div style={{width:'40px',height:'40px',border:'3px solid rgba(234,88,12,.3)',borderTopColor:'#f97316',borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
+            <p style={{color:'#64748b',fontSize:'11px',fontFamily:'Syne,sans-serif',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase'}}>Initialisation sécurisée…</p>
+        </div>
+    );
 
     return (
-        <div style={{height:'100dvh',display:'flex',flexDirection:'column',overflow:'hidden',background:'#020617'}}>
-            {/* HEADER */}
-            <header style={{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',paddingTop:'calc(12px + env(safe-area-inset-top))',borderBottom:'1px solid #0f172a',background:'rgba(2,6,23,.95)',backdropFilter:'blur(16px)'}}>
-                <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
-                    <div style={{width:'34px',height:'34px',background:'#0f172a',borderRadius:'10px',border:'1px solid rgba(234,88,12,.35)',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                        <LOGO/>
-                    </div>
-                    <div>
-                        <h1 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',letterSpacing:'.12em',textTransform:'uppercase',color:'white',lineHeight:1}}>APEX</h1>
-                        <p style={{fontSize:'8px',color:'#ea580c',fontWeight:700,letterSpacing:'.18em',textTransform:'uppercase'}}>Défis Sportifs</p>
-                    </div>
-                </div>
-                <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-                    {pendingCount > 0 && (
-                        <button onClick={() => { setTab('home'); setFilter('pending'); }} style={{position:'relative',padding:'8px',background:'rgba(234,179,8,.1)',borderRadius:'10px',border:'1px solid rgba(234,179,8,.25)',cursor:'pointer',color:'#facc15',display:'flex'}}>
-                            <Icon name="bell" size={16}/>
-                            <span style={{position:'absolute',top:'-4px',right:'-4px',width:'16px',height:'16px',background:'#f97316',borderRadius:'50%',fontSize:'9px',fontWeight:800,color:'white',display:'flex',alignItems:'center',justifyContent:'center'}}>{pendingCount}</span>
-                        </button>
+        <>
+            {/* ── Bannière de consentement (modale) ── */}
+            {showConsentBanner && !showCustomizer && (
+                <ConsentBanner
+                    onAccept={handleAcceptAll}
+                    onRefuse={handleRefuseAll}
+                    onCustomize={()=>setShowCustomizer(true)}
+                    onPrivacy={()=>setShowPrivacy(true)}
+                    onTerms={()=>setShowTerms(true)}
+                />
+            )}
+            {showCustomizer && (
+                <ConsentCustomizer
+                    onSave={handleCustomSave}
+                    onClose={()=>setShowCustomizer(false)}
+                />
+            )}
+
+            {/* ── Modale droits RGPD ── */}
+            {showRights && user && (
+                <RightsModal
+                    user={user}
+                    onClose={()=>setShowRights(false)}
+                    onDeleteAccount={()=>{ auth.signOut(); revokeConsent(); window.location.reload(); }}
+                />
+            )}
+
+            {/* ── App principale (accessible après consentement) ── */}
+            {consentState && !showConsentBanner && (
+                <div style={{height:'100dvh',display:'flex',flexDirection:'column',overflow:'hidden',background:'#020617',paddingBottom:'env(safe-area-inset-bottom)'}}>
+                    {/* AUTH */}
+                    {!user && firebaseReady && (
+                        <AuthScreen onShowPrivacy={()=>setShowPrivacy(true)} onShowTerms={()=>setShowTerms(true)}/>
                     )}
-                    <button onClick={() => setShowCreate(true)}
-                        style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',borderRadius:'12px',border:'none',cursor:'pointer',boxShadow:'0 4px 12px rgba(234,88,12,.3)'}}>
-                        <Icon name="plus" size={14} className="text-white"/>
-                        <span style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',color:'white',letterSpacing:'.1em',textTransform:'uppercase'}}>Défi</span>
-                    </button>
-                </div>
-            </header>
 
-            {/* CONTENT */}
-            <div className="scroll-area custom-scroll" style={{flex:1,overflow:'hidden auto',padding:'16px 16px 8px'}}>
-                {tab === 'home' && (
-                    <div className="fade-in">
-                        {/* Quick stats */}
-                        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'8px',marginBottom:'16px'}}>
-                            {[
-                                { label:'Actifs', value: activeCount, icon:'flame', color:'#f97316' },
-                                { label:'Victoires', value: challenges.filter(c=>c.status==='completed'&&c.winner===user.uid).length, icon:'trophy', color:'#facc15' },
-                                { label:'Total', value: challenges.filter(c=>c.status!=='declined').length, icon:'target', color:'#60a5fa' },
-                            ].map(s => (
-                                <div key={s.label} style={{background:'rgba(15,23,42,.9)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'14px',padding:'12px',textAlign:'center'}}>
-                                    <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'22px',color:s.color}}>{s.value}</p>
-                                    <p style={{fontSize:'9px',color:'#64748b',fontWeight:700,textTransform:'uppercase',letterSpacing:'.08em',marginTop:'2px'}}>{s.label}</p>
+                    {user && firebaseReady && (
+                        <>
+                            {/* HEADER */}
+                            <header style={{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',paddingTop:'calc(12px + env(safe-area-inset-top))',borderBottom:'1px solid #0f172a',background:'rgba(2,6,23,.95)',backdropFilter:'blur(16px)'}}>
+                                <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+                                    <div style={{width:'34px',height:'34px',background:'#0f172a',borderRadius:'10px',border:'1px solid rgba(234,88,12,.35)',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                                        <LOGO/>
+                                    </div>
+                                    <div>
+                                        <h1 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',letterSpacing:'.12em',textTransform:'uppercase',color:'white',lineHeight:1}}>APEX</h1>
+                                        <p style={{fontSize:'8px',color:'#ea580c',fontWeight:700,letterSpacing:'.18em',textTransform:'uppercase'}}>Défis Sportifs</p>
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
+                                <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                                    {pendingCount>0 && (
+                                        <button onClick={()=>{setTab('home');setFilter('pending');}} style={{position:'relative',padding:'8px',background:'rgba(234,179,8,.1)',borderRadius:'10px',border:'1px solid rgba(234,179,8,.25)',cursor:'pointer',color:'#facc15',display:'flex'}}>
+                                            <Icon name="bell" size={16}/>
+                                            <span style={{position:'absolute',top:'-4px',right:'-4px',width:'16px',height:'16px',background:'#f97316',borderRadius:'50%',fontSize:'9px',fontWeight:800,color:'white',display:'flex',alignItems:'center',justifyContent:'center'}}>{pendingCount}</span>
+                                        </button>
+                                    )}
+                                    <button onClick={()=>setShowCreate(true)}
+                                        style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',borderRadius:'12px',border:'none',cursor:'pointer',boxShadow:'0 4px 12px rgba(234,88,12,.3)'}}>
+                                        <Icon name="plus" size={14}/>
+                                        <span style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',color:'white',letterSpacing:'.1em',textTransform:'uppercase'}}>Défi</span>
+                                    </button>
+                                </div>
+                            </header>
 
-                        {/* Filters */}
-                        <div style={{display:'flex',gap:'6px',marginBottom:'16px',overflowX:'auto',paddingBottom:'4px'}}>
-                            {[
-                                {id:'all', label:'Tous'},
-                                {id:'pending', label:'En attente', count: challenges.filter(c=>c.status==='pending').length},
-                                {id:'active', label:'En cours'},
-                                {id:'completed', label:'Terminés'},
-                            ].map(f => (
-                                <button key={f.id} onClick={() => setFilter(f.id)}
-                                    style={{flexShrink:0,display:'flex',alignItems:'center',gap:'5px',padding:'7px 14px',borderRadius:'99px',border:`1px solid ${filter===f.id?'rgba(234,88,12,.5)':'rgba(30,41,59,.8)'}`,background:filter===f.id?'rgba(234,88,12,.1)':'rgba(15,23,42,.8)',cursor:'pointer',whiteSpace:'nowrap'}}>
-                                    <span style={{fontSize:'10px',fontWeight:700,color:filter===f.id?'#f97316':'#64748b',letterSpacing:'.06em'}}>{f.label}</span>
-                                    {f.count > 0 && <span style={{width:'16px',height:'16px',borderRadius:'50%',background:'#ea580c',fontSize:'9px',fontWeight:800,color:'white',display:'flex',alignItems:'center',justifyContent:'center'}}>{f.count}</span>}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Challenges */}
-                        {filteredChallenges.length === 0 ? (
-                            <div style={{textAlign:'center',padding:'48px 16px'}}>
-                                <div style={{fontSize:'48px',marginBottom:'12px'}} className="emoji-native">⚡</div>
-                                <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginBottom:'8px'}}>Aucun défi ici</h3>
-                                <p style={{color:'#64748b',fontSize:'12px',marginBottom:'20px'}}>Lancez votre premier défi à un ami !</p>
-                                <button onClick={() => setShowCreate(true)}
-                                    style={{padding:'12px 24px',background:'linear-gradient(135deg,#ea580c,#c2410c)',borderRadius:'14px',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>
-                                    + Créer un défi
-                                </button>
+                            {/* CONTENU */}
+                            <div className="scroll-area custom-scroll" style={{flex:1,overflow:'hidden auto',padding:'16px 16px 8px'}}>
+                                {tab==='home' && (
+                                    <div className="fade-in">
+                                        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'8px',marginBottom:'16px'}}>
+                                            {[
+                                                {label:'Actifs',value:activeCount,color:'#f97316'},
+                                                {label:'Victoires',value:challenges.filter(c=>c.status==='completed'&&c.winner===user.uid).length,color:'#facc15'},
+                                                {label:'Total',value:challenges.filter(c=>c.status!=='declined').length,color:'#60a5fa'},
+                                            ].map(s => (
+                                                <div key={s.label} style={{background:'rgba(15,23,42,.9)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'14px',padding:'12px',textAlign:'center'}}>
+                                                    <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'22px',color:s.color}}>{s.value}</p>
+                                                    <p style={{fontSize:'9px',color:'#64748b',fontWeight:700,textTransform:'uppercase',letterSpacing:'.08em',marginTop:'2px'}}>{s.label}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div style={{display:'flex',gap:'6px',marginBottom:'16px',overflowX:'auto',paddingBottom:'4px'}}>
+                                            {[{id:'all',label:'Tous'},{id:'pending',label:'En attente',count:challenges.filter(c=>c.status==='pending').length},{id:'active',label:'En cours'},{id:'completed',label:'Terminés'}].map(f => (
+                                                <button key={f.id} onClick={()=>setFilter(f.id)}
+                                                    style={{flexShrink:0,display:'flex',alignItems:'center',gap:'5px',padding:'7px 14px',borderRadius:'99px',border:`1px solid ${filter===f.id?'rgba(234,88,12,.5)':'rgba(30,41,59,.8)'}`,background:filter===f.id?'rgba(234,88,12,.1)':'rgba(15,23,42,.8)',cursor:'pointer',whiteSpace:'nowrap'}}>
+                                                    <span style={{fontSize:'10px',fontWeight:700,color:filter===f.id?'#f97316':'#64748b',letterSpacing:'.06em'}}>{f.label}</span>
+                                                    {f.count>0&&<span style={{width:'16px',height:'16px',borderRadius:'50%',background:'#ea580c',fontSize:'9px',fontWeight:800,color:'white',display:'flex',alignItems:'center',justifyContent:'center'}}>{f.count}</span>}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {filteredChallenges.length===0 ? (
+                                            <div style={{textAlign:'center',padding:'48px 16px'}}>
+                                                <div style={{fontSize:'48px',marginBottom:'12px'}} className="emoji-native">⚡</div>
+                                                <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginBottom:'8px'}}>Aucun défi ici</h3>
+                                                <p style={{color:'#64748b',fontSize:'12px',marginBottom:'20px'}}>Lancez votre premier défi à un ami !</p>
+                                                <button onClick={()=>setShowCreate(true)}
+                                                    style={{padding:'12px 24px',background:'linear-gradient(135deg,#ea580c,#c2410c)',borderRadius:'14px',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>
+                                                    + Créer un défi
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            filteredChallenges.map(c => (
+                                                <ChallengeCard key={c.id} challenge={c}
+                                                    user={{uid:user.uid,photoURL:profile.photoURL,displayName:profile.displayName}}
+                                                    onUpdate={setUpdateTarget}
+                                                    onAccept={acceptChallenge}
+                                                    onDecline={declineChallenge}/>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                                {tab==='leaderboard' && (
+                                    <div className="fade-in">
+                                        <LeaderboardTab user={{uid:user.uid,...profile}} friends={friends} friendProfiles={friendProfiles} challenges={challenges}/>
+                                    </div>
+                                )}
+                                {tab==='profile' && (
+                                    <div className="fade-in">
+                                        <ProfileTab
+                                            user={user} profile={profile} setProfile={setProfile} challenges={challenges}
+                                            onShowRights={()=>setShowRights(true)}
+                                            onShowPrivacy={()=>setShowPrivacy(true)}
+                                            onShowTerms={()=>setShowTerms(true)}
+                                            onManageConsent={handleManageConsent}
+                                        />
+                                    </div>
+                                )}
                             </div>
-                        ) : (
-                            filteredChallenges.map(c => (
-                                <ChallengeCard key={c.id} challenge={c} user={{uid:user.uid,photoURL:profile.photoURL,displayName:profile.displayName}}
-                                    onUpdate={setUpdateTarget}
-                                    onAccept={acceptChallenge}
-                                    onDecline={declineChallenge}/>
-                            ))
-                        )}
-                    </div>
-                )}
 
-                {tab === 'leaderboard' && (
-                    <div className="fade-in">
-                        <LeaderboardTab user={{uid:user.uid,...profile}} friends={friends} friendProfiles={friendProfiles} challenges={challenges}/>
-                    </div>
-                )}
+                            {/* NAV */}
+                            <nav style={{flexShrink:0,borderTop:'1px solid #0f172a',background:'rgba(2,6,23,.98)',display:'flex',justifyContent:'space-around',padding:'6px 8px',paddingBottom:'calc(6px + env(safe-area-inset-bottom))'}}>
+                                {[{id:'home',icon:'home',label:'Défis'},{id:'leaderboard',icon:'trophy',label:'Classement'},{id:'profile',icon:'user',label:'Profil'}].map(n => (
+                                    <button key={n.id} onClick={()=>setTab(n.id)} className={`nav-item ${tab===n.id?'active':''}`}>
+                                        <Icon name={n.icon} size={20} className={tab===n.id?'text-orange-500':'text-slate-500'}/>
+                                        <span style={{fontSize:'9px',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:tab===n.id?'#f97316':'#475569'}}>{n.label}</span>
+                                    </button>
+                                ))}
+                            </nav>
 
-                {tab === 'profile' && (
-                    <div className="fade-in">
-                        <ProfileTab user={user} profile={profile} setProfile={setProfile} challenges={challenges}/>
-                    </div>
-                )}
-            </div>
+                            {/* Bandeau cookie persistant (discret) */}
+                            {/* <CookieStrip onManage={handleManageConsent}/> */}
 
-            {/* NAV BAR */}
-            <nav style={{flexShrink:0,borderTop:'1px solid #0f172a',background:'rgba(2,6,23,.98)',paddingBottom:'env(safe-area-inset-bottom)',display:'flex',justifyContent:'space-around',padding:'6px 8px',paddingBottom:'calc(6px + env(safe-area-inset-bottom))'}}>
-                {[
-                    { id:'home', icon:'home', label:'Défis' },
-                    { id:'leaderboard', icon:'trophy', label:'Classement' },
-                    { id:'profile', icon:'user', label:'Profil' },
-                ].map(n => (
-                    <button key={n.id} onClick={() => setTab(n.id)} className={`nav-item ${tab===n.id?'active':''}`}>
-                        <Icon name={n.icon} size={20} className={tab===n.id?'text-orange-500':'text-slate-500'}/>
-                        <span style={{fontSize:'9px',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:tab===n.id?'#f97316':'#475569'}}>{n.label}</span>
-                    </button>
-                ))}
-            </nav>
-
-            {/* MODALS */}
-            {showCreate && (
-                <CreateChallengeModal user={user} profile={profile} friends={friends} friendProfiles={friendProfiles} onClose={() => setShowCreate(false)}/>
+                            {/* MODALS */}
+                            {showCreate && <CreateChallengeModal user={user} profile={profile} friends={friends} friendProfiles={friendProfiles} onClose={()=>setShowCreate(false)}/>}
+                            {updateTarget && <UpdateProgressModal challenge={updateTarget} user={user} onClose={()=>setUpdateTarget(null)}/>}
+                        </>
+                    )}
+                </div>
             )}
-            {updateTarget && (
-                <UpdateProgressModal challenge={updateTarget} user={user} onClose={() => setUpdateTarget(null)}/>
-            )}
-        </div>
+        </>
     );
 }
 
