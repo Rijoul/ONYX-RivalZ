@@ -115,6 +115,17 @@
 
         /* SCROLL CONTAINER */
         .scroll-area { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+
+        /* RGPD */
+        .rgpd-overlay { position:fixed; inset:0; z-index:9999; background:rgba(2,6,23,.92); backdrop-filter:blur(24px); display:flex; align-items:flex-end; justify-content:center; padding:16px; padding-bottom:calc(16px + env(safe-area-inset-bottom)); }
+        .legal-overlay { position:fixed; inset:0; z-index:8000; background:#020617; display:flex; flex-direction:column; overflow:hidden; padding-top:env(safe-area-inset-top); }
+        .legal-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+        .legal-h1 { font-family:'Syne',sans-serif; font-size:14px; font-weight:800; letter-spacing:.15em; text-transform:uppercase; }
+        .legal-h2 { font-family:'Syne',sans-serif; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#f97316; margin-top:24px; margin-bottom:8px; }
+        .legal-p { font-size:12px; color:#94a3b8; line-height:1.75; margin-bottom:8px; }
+        .legal-ul { font-size:12px; color:#94a3b8; line-height:1.75; margin-bottom:8px; padding-left:16px; list-style:disc; }
+        .legal-link { color:#f97316; text-decoration:underline; }
+        .rights-modal { position:fixed; inset:0; z-index:9000; background:rgba(2,6,23,.92); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; padding:16px; }
     </style>
 </head>
 <body>
@@ -316,6 +327,354 @@ const AuthScreen = () => {
                         </div>
                         <div style={{height:'1px',flex:1,background:'rgba(30,41,59,.8)'}}/>
                     </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ── RGPD : POLITIQUE DE CONFIDENTIALITÉ ─────────────────────────────────
+const PrivacyPage = ({ onClose }) => (
+    <div className="legal-overlay">
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 20px',borderBottom:'1px solid #1e293b',background:'rgba(15,23,42,.8)',flexShrink:0}}>
+            <h1 className="legal-h1" style={{color:'white'}}>Politique de confidentialité</h1>
+            <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'10px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div className="legal-scroll custom-scroll" style={{padding:'20px'}}>
+            <p className="legal-p" style={{color:'#475569',fontSize:'10px',marginBottom:'24px'}}>Dernière mise à jour : mai 2025 · Version 1.0</p>
+
+            <h2 className="legal-h2">1. Identité du responsable du traitement</h2>
+            <p className="legal-p"><strong style={{color:'#e2e8f0'}}>APEX Défis Sportifs</strong> est une application web indépendante développée par Rijoul. Pour toute question relative à vos données personnelles, vous pouvez contacter le responsable directement via l'application.</p>
+
+            <h2 className="legal-h2">2. Données personnelles collectées</h2>
+            <p className="legal-p">Dans le cadre du fonctionnement d'APEX, les données suivantes sont collectées et traitées :</p>
+            <ul className="legal-ul">
+                <li><strong style={{color:'#e2e8f0'}}>Adresse e-mail</strong> — utilisée uniquement pour l'authentification et la connexion à votre compte</li>
+                <li><strong style={{color:'#e2e8f0'}}>Identifiant unique (UID)</strong> — attribué automatiquement par Firebase à la création du compte</li>
+                <li><strong style={{color:'#e2e8f0'}}>Pseudo (nom d'affichage)</strong> — choisi librement par l'utilisateur</li>
+                <li><strong style={{color:'#e2e8f0'}}>Photo de profil</strong> — facultative, générée automatiquement par défaut</li>
+                <li><strong style={{color:'#e2e8f0'}}>Données de défis sportifs</strong> — titres, objectifs, progressions et résultats des défis créés ou acceptés</li>
+                <li><strong style={{color:'#e2e8f0'}}>Liste de contacts</strong> — identifiants des utilisateurs ajoutés comme amis, stockés dans votre espace personnel</li>
+                <li><strong style={{color:'#e2e8f0'}}>Horodatage d'activité</strong> — date de création du compte et des défis</li>
+            </ul>
+            <p className="legal-p">APEX ne collecte <strong style={{color:'#e2e8f0'}}>aucune donnée de localisation</strong>, aucune donnée de santé au sens clinique, aucune donnée bancaire et n'utilise aucun traceur publicitaire.</p>
+
+            <h2 className="legal-h2">3. Finalités du traitement</h2>
+            <ul className="legal-ul">
+                <li><strong style={{color:'#e2e8f0'}}>Authentification</strong> — permettre la création de compte et la connexion sécurisée</li>
+                <li><strong style={{color:'#e2e8f0'}}>Fonctionnement de l'application</strong> — afficher les défis, suivre les progressions, calculer les classements</li>
+                <li><strong style={{color:'#e2e8f0'}}>Interactions sociales</strong> — permettre l'envoi et la réception de défis entre utilisateurs consentants</li>
+                <li><strong style={{color:'#e2e8f0'}}>Amélioration du service</strong> — statistiques anonymes d'usage (aucune donnée individuelle transmise à des tiers)</li>
+            </ul>
+
+            <h2 className="legal-h2">4. Base légale du traitement (RGPD)</h2>
+            <p className="legal-p">Le traitement de vos données repose sur les bases légales suivantes, conformément au Règlement (UE) 2016/679 (RGPD) :</p>
+            <ul className="legal-ul">
+                <li><strong style={{color:'#e2e8f0'}}>Consentement explicite</strong> (art. 6§1a) — recueilli lors de votre première utilisation via la bannière de consentement. Vous pouvez retirer ce consentement à tout moment.</li>
+                <li><strong style={{color:'#e2e8f0'}}>Exécution d'un contrat</strong> (art. 6§1b) — les données de profil et de défis sont nécessaires au fonctionnement du service que vous avez choisi d'utiliser.</li>
+                <li><strong style={{color:'#e2e8f0'}}>Intérêt légitime</strong> (art. 6§1f) — maintien de la sécurité du service et prévention des abus.</li>
+            </ul>
+
+            <h2 className="legal-h2">5. Durée de conservation</h2>
+            <ul className="legal-ul">
+                <li>Données de profil : conservées jusqu'à suppression du compte par l'utilisateur</li>
+                <li>Données de défis : conservées tant que le compte est actif ou jusqu'à suppression manuelle</li>
+                <li>Données d'authentification Firebase : supprimées dans les 90 jours suivant la suppression du compte</li>
+                <li>En cas d'inactivité prolongée (plus de 24 mois), les données pourront être supprimées après notification</li>
+            </ul>
+
+            <h2 className="legal-h2">6. Sous-traitants et transferts de données</h2>
+            <p className="legal-p">APEX utilise les services de <strong style={{color:'#e2e8f0'}}>Firebase / Google LLC</strong> pour l'infrastructure technique :</p>
+            <ul className="legal-ul">
+                <li><strong style={{color:'#e2e8f0'}}>Firebase Authentication</strong> — gestion sécurisée des comptes utilisateurs</li>
+                <li><strong style={{color:'#e2e8f0'}}>Cloud Firestore</strong> — base de données hébergée en région Europe de l'Ouest (europe-west)</li>
+                <li>Google LLC est soumis aux Clauses Contractuelles Types (CCT) approuvées par la Commission européenne, garantissant un niveau de protection adéquat conforme au RGPD</li>
+                <li>Politique de confidentialité Google : <a href="https://policies.google.com/privacy" target="_blank" className="legal-link">policies.google.com/privacy</a></li>
+            </ul>
+            <p className="legal-p">Aucune donnée personnelle n'est vendue, revendue ou partagée avec des tiers à des fins commerciales ou publicitaires.</p>
+
+            <h2 className="legal-h2">7. Sécurité des données</h2>
+            <p className="legal-p">Les mesures de sécurité suivantes sont mises en œuvre :</p>
+            <ul className="legal-ul">
+                <li>Authentification sécurisée via Firebase Auth avec hachage des mots de passe (bcrypt)</li>
+                <li>Communications chiffrées en transit via HTTPS/TLS</li>
+                <li>Règles de sécurité Firestore limitant l'accès aux seules données autorisées pour chaque utilisateur</li>
+                <li>Aucun accès administrateur aux mots de passe des utilisateurs</li>
+            </ul>
+
+            <h2 className="legal-h2">8. Vos droits (RGPD)</h2>
+            <p className="legal-p">Conformément au RGPD, vous disposez des droits suivants que vous pouvez exercer depuis l'onglet Profil de l'application ou en contactant le responsable :</p>
+            <ul className="legal-ul">
+                <li><strong style={{color:'#e2e8f0'}}>Droit d'accès</strong> (art. 15) — obtenir une copie de toutes vos données personnelles traitées</li>
+                <li><strong style={{color:'#e2e8f0'}}>Droit de rectification</strong> (art. 16) — corriger ou mettre à jour votre pseudo et votre photo de profil</li>
+                <li><strong style={{color:'#e2e8f0'}}>Droit à l'effacement</strong> (art. 17) — supprimer définitivement votre compte et toutes vos données</li>
+                <li><strong style={{color:'#e2e8f0'}}>Droit à la portabilité</strong> (art. 20) — exporter vos données dans un format lisible</li>
+                <li><strong style={{color:'#e2e8f0'}}>Droit d'opposition</strong> (art. 21) — vous opposer à certains traitements</li>
+                <li><strong style={{color:'#e2e8f0'}}>Droit de limitation</strong> (art. 18) — demander la limitation du traitement</li>
+                <li><strong style={{color:'#e2e8f0'}}>Retrait du consentement</strong> — à tout moment, sans incidence sur les traitements antérieurs, via le bouton "Gérer mes préférences"</li>
+            </ul>
+            <p className="legal-p">Vous avez également le droit d'introduire une réclamation auprès de la <a href="https://www.cnil.fr" target="_blank" className="legal-link">Commission Nationale de l'Informatique et des Libertés (CNIL)</a>, 3 Place de Fontenoy, 75007 Paris.</p>
+
+            <h2 className="legal-h2">9. Cookies et stockage local</h2>
+            <p className="legal-p">APEX utilise le <strong style={{color:'#e2e8f0'}}>stockage local du navigateur (localStorage)</strong> uniquement pour conserver vos préférences de consentement. Aucun cookie de traçage ou publicitaire n'est utilisé. Firebase peut utiliser des cookies techniques strictement nécessaires au fonctionnement de l'authentification.</p>
+
+            <h2 className="legal-h2">10. Mineurs</h2>
+            <p className="legal-p">APEX est destiné aux personnes âgées d'au moins <strong style={{color:'#e2e8f0'}}>16 ans</strong> dans l'Union Européenne (conformément à l'art. 8 du RGPD). Pour les autres pays, l'âge minimum est de 13 ans. Si vous avez connaissance qu'un mineur a créé un compte sans autorisation parentale, veuillez nous contacter pour que les données soient supprimées.</p>
+
+            <div style={{height:'32px'}}/>
+        </div>
+    </div>
+);
+
+// ── RGPD : CGU ──────────────────────────────────────────────────────────
+const TermsPage = ({ onClose }) => (
+    <div className="legal-overlay">
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 20px',borderBottom:'1px solid #1e293b',background:'rgba(15,23,42,.8)',flexShrink:0}}>
+            <h1 className="legal-h1" style={{color:'white'}}>Conditions générales d'utilisation</h1>
+            <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'10px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div className="legal-scroll custom-scroll" style={{padding:'20px'}}>
+            <p className="legal-p" style={{color:'#475569',fontSize:'10px',marginBottom:'24px'}}>Dernière mise à jour : mai 2025 · Version 1.0</p>
+
+            <h2 className="legal-h2">1. Présentation du service</h2>
+            <p className="legal-p"><strong style={{color:'#e2e8f0'}}>APEX Défis Sportifs</strong> est une application web permettant à des utilisateurs de se lancer mutuellement des défis sportifs et de suivre leurs progressions. Le service est développé et maintenu par Rijoul, développeur indépendant.</p>
+            <p className="legal-p">En utilisant APEX, vous acceptez sans réserve les présentes Conditions Générales d'Utilisation (CGU). Si vous n'acceptez pas ces conditions, vous devez cesser d'utiliser le service.</p>
+
+            <h2 className="legal-h2">2. Accès au service et âge minimum</h2>
+            <p className="legal-p">L'accès à APEX est réservé aux personnes physiques capables de contracter. L'âge minimum requis est :</p>
+            <ul className="legal-ul">
+                <li><strong style={{color:'#e2e8f0'}}>16 ans</strong> dans les pays membres de l'Union Européenne (conformément au RGPD)</li>
+                <li><strong style={{color:'#e2e8f0'}}>13 ans</strong> dans les autres pays, sous réserve des législations nationales applicables</li>
+            </ul>
+            <p className="legal-p">En créant un compte, vous déclarez sur l'honneur avoir l'âge requis. Rijoul se réserve le droit de supprimer tout compte appartenant à une personne n'ayant pas l'âge minimum requis.</p>
+
+            <h2 className="legal-h2">3. Création de compte et responsabilités</h2>
+            <p className="legal-p">La création d'un compte nécessite la fourniture d'une adresse e-mail valide et d'un mot de passe. Vous êtes seul responsable de :</p>
+            <ul className="legal-ul">
+                <li>La confidentialité de vos identifiants de connexion</li>
+                <li>Toute activité effectuée depuis votre compte</li>
+                <li>L'exactitude des informations de profil que vous fournissez</li>
+                <li>La notification immédiate de toute utilisation non autorisée de votre compte</li>
+            </ul>
+
+            <h2 className="legal-h2">4. Règles de conduite et utilisations interdites</h2>
+            <p className="legal-p">En utilisant APEX, vous vous engagez à respecter les règles suivantes. Il est strictement interdit de :</p>
+            <ul className="legal-ul">
+                <li>Usurper l'identité d'une autre personne ou d'un tiers</li>
+                <li>Harceler, menacer, intimider ou discriminer d'autres utilisateurs</li>
+                <li>Créer des défis à contenu illicite, violent, haineux, pornographique ou diffamatoire</li>
+                <li>Utiliser le service à des fins commerciales non autorisées ou de spam</li>
+                <li>Tenter de contourner les mesures de sécurité ou d'accéder aux données d'autres utilisateurs</li>
+                <li>Transmettre des virus, malwares ou tout code malveillant</li>
+                <li>Utiliser des robots, scripts ou outils automatisés pour accéder au service</li>
+                <li>Créer plusieurs comptes dans le but de contourner une suspension</li>
+            </ul>
+
+            <h2 className="legal-h2">5. Contenu des défis</h2>
+            <p className="legal-p">Les utilisateurs sont entièrement responsables des défis sportifs qu'ils créent. Les défis doivent respecter les règles suivantes :</p>
+            <ul className="legal-ul">
+                <li>Le contenu doit être licite et respectueux</li>
+                <li>Les défis ne doivent pas encourager des pratiques sportives dangereuses ou extrêmes sans avertissement approprié</li>
+                <li>Les titres et descriptions doivent rester dans un cadre sportif et sain</li>
+            </ul>
+            <p className="legal-p">Rijoul se réserve le droit de supprimer tout défi ne respectant pas ces règles, sans préavis.</p>
+
+            <h2 className="legal-h2">6. Propriété intellectuelle</h2>
+            <p className="legal-p">L'application APEX, son design, son logo, son architecture et son code source sont la propriété exclusive de Rijoul. Toute reproduction, adaptation ou utilisation non autorisée est strictement interdite.</p>
+            <p className="legal-p">Les contenus créés par les utilisateurs (pseudos, titres de défis, descriptions) restent leur propriété. En les publiant sur APEX, vous accordez à Rijoul une licence non exclusive et gratuite d'hébergement et d'affichage aux seules fins du fonctionnement du service.</p>
+
+            <h2 className="legal-h2">7. Disponibilité du service</h2>
+            <p className="legal-p">Rijoul met à disposition le service APEX tel quel, sans garantie de disponibilité continue. Des interruptions techniques peuvent survenir pour maintenance ou suite à des incidents chez les prestataires (Firebase/Google). Rijoul ne saurait être tenu responsable de toute perte de données ou d'accès liée à ces interruptions.</p>
+
+            <h2 className="legal-h2">8. Limitation de responsabilité</h2>
+            <p className="legal-p">Rijoul ne peut être tenu responsable :</p>
+            <ul className="legal-ul">
+                <li>Des blessures ou accidents pouvant survenir lors de la réalisation de défis sportifs</li>
+                <li>Du contenu des interactions entre utilisateurs</li>
+                <li>Des dommages indirects résultant de l'utilisation ou de l'impossibilité d'utiliser le service</li>
+                <li>Des actions d'utilisateurs tiers sur la plateforme</li>
+            </ul>
+            <p className="legal-p"><strong style={{color:'#e2e8f0'}}>Important :</strong> Consultez un professionnel de santé avant d'entreprendre tout programme sportif intense. APEX n'est pas un service médical.</p>
+
+            <h2 className="legal-h2">9. Signalement d'abus</h2>
+            <p className="legal-p">Si vous êtes victime ou témoin d'un comportement abusif sur APEX, vous pouvez contacter le responsable directement via l'application. En cas de contenu illicite grave (notamment impliquant des mineurs), vous avez l'obligation de le signaler aux autorités compétentes : <a href="https://www.internet-signalement.gouv.fr" target="_blank" className="legal-link">internet-signalement.gouv.fr</a>.</p>
+
+            <h2 className="legal-h2">10. Modification des CGU</h2>
+            <p className="legal-p">Rijoul se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés de toute modification substantielle par un avertissement lors de leur prochaine connexion. La poursuite de l'utilisation du service après notification vaut acceptation des nouvelles conditions.</p>
+
+            <h2 className="legal-h2">11. Résiliation</h2>
+            <p className="legal-p">Vous pouvez supprimer votre compte à tout moment depuis l'onglet Profil de l'application. Rijoul se réserve le droit de suspendre ou supprimer tout compte en cas de violation des présentes CGU, sans préavis ni indemnité.</p>
+
+            <h2 className="legal-h2">12. Droit applicable et juridiction</h2>
+            <p className="legal-p">Les présentes CGU sont régies par le droit français. En cas de litige relatif à l'interprétation ou à l'exécution des présentes CGU, et à défaut de résolution amiable, les tribunaux français du ressort de Besançon (Doubs) seront compétents.</p>
+
+            <div style={{height:'32px'}}/>
+        </div>
+    </div>
+);
+
+// ── RGPD : BANNIÈRE DE CONSENTEMENT ─────────────────────────────────────
+const ConsentBanner = ({ onAccept, onRefuse, onCustomize, onPrivacy, onTerms }) => (
+    <div className="rgpd-overlay">
+        <div className="slide-up" style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:'28px',padding:'24px',width:'100%',maxWidth:'460px',boxShadow:'0 -20px 60px rgba(0,0,0,.5)'}}>
+            <div style={{display:'flex',alignItems:'flex-start',gap:'12px',marginBottom:'16px'}}>
+                <div style={{width:'40px',height:'40px',background:'rgba(234,88,12,.12)',border:'1px solid rgba(234,88,12,.25)',borderRadius:'14px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <div>
+                    <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',letterSpacing:'.12em',textTransform:'uppercase',color:'white',marginBottom:'6px'}}>Confidentialité & Données</h2>
+                    <p style={{fontSize:'11px',color:'#94a3b8',lineHeight:1.65}}>
+                        APEX collecte uniquement les données nécessaires à son fonctionnement : authentification, profil, défis sportifs et liste de contacts. Aucune donnée n'est vendue ni utilisée à des fins publicitaires.
+                    </p>
+                </div>
+            </div>
+
+            <div style={{background:'rgba(34,197,94,.05)',border:'1px solid rgba(34,197,94,.15)',borderRadius:'12px',padding:'10px 14px',marginBottom:'16px',display:'flex',alignItems:'center',gap:'8px'}}>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <p style={{fontSize:'10px',color:'#86efac',fontWeight:600}}>Données hébergées en Europe · Aucune pub · Conforme RGPD</p>
+            </div>
+
+            <div style={{display:'flex',gap:'8px',marginBottom:'10px'}}>
+                <button onClick={onRefuse} style={{flex:1,padding:'12px',borderRadius:'14px',background:'rgba(30,41,59,.8)',border:'1px solid #1e293b',color:'#94a3b8',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>Refuser</button>
+                <button onClick={onAccept} style={{flex:2,padding:'12px',borderRadius:'14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',border:'none',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',boxShadow:'0 4px 16px rgba(234,88,12,.3)'}}>Accepter tout</button>
+            </div>
+            <button onClick={onCustomize} style={{width:'100%',padding:'10px',borderRadius:'14px',background:'transparent',border:'1px solid rgba(30,41,59,.8)',color:'#64748b',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',marginBottom:'14px'}}>
+                Personnaliser mes choix
+            </button>
+            <div style={{display:'flex',justifyContent:'center',gap:'16px'}}>
+                <button onClick={onPrivacy} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer'}}>Politique de confidentialité</button>
+                <span style={{color:'#1e293b',fontSize:'9px'}}>·</span>
+                <button onClick={onTerms} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer'}}>CGU</button>
+            </div>
+        </div>
+    </div>
+);
+
+// ── RGPD : PERSONNALISATION DES CONSENTEMENTS ────────────────────────────
+const ConsentCustomizer = ({ onSave, onClose }) => {
+    const [prefs, setPrefs] = useState({ essential: true, analytics: false, functional: true });
+    return (
+        <div className="rgpd-overlay">
+            <div className="slide-up" style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:'28px',padding:'24px',width:'100%',maxWidth:'460px',boxShadow:'0 -20px 60px rgba(0,0,0,.5)'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
+                    <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',letterSpacing:'.12em',textTransform:'uppercase',color:'white'}}>Personnaliser</h2>
+                    <button onClick={onClose} style={{padding:'6px',background:'rgba(30,41,59,.8)',borderRadius:'8px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                {[
+                    { key:'essential', label:'Données essentielles', desc:'Authentification, profil, défis. Indispensables au fonctionnement du service.', locked:true },
+                    { key:'functional', label:'Préférences fonctionnelles', desc:'Mémorisation de vos préférences de consentement dans votre navigateur.', locked:false },
+                    { key:'analytics', label:'Statistiques anonymes', desc:'Données agrégées sur l\'utilisation du service (aucune donnée individuelle partagée).', locked:false },
+                ].map(item => (
+                    <div key={item.key} style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'12px',padding:'14px 0',borderBottom:'1px solid #1e293b'}}>
+                        <div style={{flex:1}}>
+                            <div style={{display:'flex',alignItems:'center',gap:'6px',marginBottom:'4px'}}>
+                                <p style={{fontSize:'11px',fontWeight:800,textTransform:'uppercase',letterSpacing:'.08em',color:'white'}}>{item.label}</p>
+                                {item.locked && <span style={{fontSize:'8px',background:'rgba(30,41,59,.8)',color:'#64748b',padding:'2px 8px',borderRadius:'4px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.06em'}}>Requis</span>}
+                            </div>
+                            <p style={{fontSize:'10px',color:'#64748b',lineHeight:1.6}}>{item.desc}</p>
+                        </div>
+                        <div style={{flexShrink:0,marginTop:'2px'}}>
+                            {item.locked ? (
+                                <div className="toggle-track" style={{background:'#ea580c',opacity:.6,cursor:'not-allowed'}}><div className="toggle-thumb" style={{left:'23px'}}/></div>
+                            ) : (
+                                <button onClick={() => setPrefs(p=>({...p,[item.key]:!p[item.key]}))} className="toggle-track" style={{background:prefs[item.key]?'#ea580c':'#1e293b',border:'none',cursor:'pointer'}}>
+                                    <div className="toggle-thumb" style={{left:prefs[item.key]?'23px':'3px'}}/>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                ))}
+                <button onClick={() => onSave(prefs)} style={{marginTop:'20px',width:'100%',padding:'14px',borderRadius:'14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>
+                    Enregistrer mes préférences
+                </button>
+                <p style={{fontSize:'9px',color:'#475569',textAlign:'center',marginTop:'8px'}}>Le refus des données essentielles empêche l'utilisation du service.</p>
+            </div>
+        </div>
+    );
+};
+
+// ── RGPD : GESTION DES DROITS (depuis profil) ───────────────────────────
+const RightsModal = ({ user, onClose, onDeleteAccount }) => {
+    const [activeRight, setActiveRight] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [exported, setExported] = useState(false);
+
+    const exportData = async () => {
+        setLoading(true);
+        try {
+            const profileDoc = await db.collection('artifacts').doc(ONYX_APP_ID).collection('public').doc('data').collection('profiles').doc(user.uid).get();
+            const challengesSnap = await db.collection(APEX_APP_ID).where('createdBy','==',user.uid).get();
+            const receivedSnap = await db.collection(APEX_APP_ID).where('challengedUid','==',user.uid).get();
+            const data = {
+                exportDate: new Date().toISOString(),
+                profile: profileDoc.exists ? profileDoc.data() : {},
+                challengesCreated: challengesSnap.docs.map(d=>d.data()),
+                challengesReceived: receivedSnap.docs.map(d=>d.data()),
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href=url; a.download='apex-mes-donnees.json';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            setExported(true);
+        } catch(e) { console.error(e); }
+        setLoading(false);
+    };
+
+    return (
+        <div className="rights-modal">
+            <div className="fade-in" style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:'24px',padding:'24px',width:'100%',maxWidth:'420px',maxHeight:'85vh',overflowY:'auto'}} className="custom-scroll">
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
+                    <div>
+                        <p style={{color:'#f97316',fontSize:'9px',fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase'}}>RGPD</p>
+                        <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginTop:'2px'}}>Mes droits</h2>
+                    </div>
+                    <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'10px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                {[
+                    { id:'access', icon:'📋', label:'Droit d\'accès', desc:'Téléchargez toutes vos données personnelles au format JSON.', action: 'Exporter mes données' },
+                    { id:'rectify', icon:'✏️', label:'Droit de rectification', desc:'Modifiez votre pseudo et photo de profil depuis l\'onglet Profil.', action: 'Aller au profil' },
+                    { id:'delete', icon:'🗑️', label:'Droit à l\'effacement', desc:'Supprimez définitivement votre compte et toutes vos données.', action: 'Supprimer mon compte', danger: true },
+                    { id:'portability', icon:'📦', label:'Droit à la portabilité', desc:'Exportez vos données dans un format standard et lisible.', action: 'Exporter mes données' },
+                    { id:'object', icon:'🚫', label:'Droit d\'opposition', desc:'Contactez-nous pour vous opposer à certains traitements.', action: null },
+                    { id:'consent', icon:'🔄', label:'Retirer mon consentement', desc:'Réinitialisez vos préférences de consentement.', action: 'Gérer les préférences' },
+                ].map(r => (
+                    <div key={r.id} style={{background:'rgba(15,23,42,.8)',border:`1px solid ${r.danger?'rgba(239,68,68,.2)':'rgba(30,41,59,.8)'}`,borderRadius:'14px',padding:'14px',marginBottom:'8px'}}>
+                        <div style={{display:'flex',alignItems:'flex-start',gap:'10px'}}>
+                            <span style={{fontSize:'20px'}}>{r.icon}</span>
+                            <div style={{flex:1}}>
+                                <p style={{fontWeight:700,fontSize:'12px',color:r.danger?'#f87171':'white',marginBottom:'4px'}}>{r.label}</p>
+                                <p style={{fontSize:'10px',color:'#64748b',lineHeight:1.6,marginBottom:'8px'}}>{r.desc}</p>
+                                {r.action && (
+                                    <button onClick={() => {
+                                        if (r.id==='access'||r.id==='portability') exportData();
+                                        else if (r.id==='delete') { onClose(); onDeleteAccount(); }
+                                        else if (r.id==='consent') { localStorage.removeItem('apex_consent'); window.location.reload(); }
+                                        else onClose();
+                                    }}
+                                        style={{padding:'7px 14px',borderRadius:'10px',background:r.danger?'rgba(239,68,68,.1)':'rgba(234,88,12,.1)',border:`1px solid ${r.danger?'rgba(239,68,68,.3)':'rgba(234,88,12,.25)'}`,color:r.danger?'#f87171':'#f97316',fontSize:'10px',fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:'6px'}}>
+                                        {loading&&(r.id==='access'||r.id==='portability') ? '⏳ Export...' : exported&&(r.id==='access'||r.id==='portability') ? '✓ Téléchargé !' : r.action}
+                                    </button>
+                                )}
+                                {!r.action && <p style={{fontSize:'9px',color:'#475569',fontStyle:'italic'}}>Contactez le responsable via l'application.</p>}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+                <div style={{background:'rgba(59,130,246,.05)',border:'1px solid rgba(59,130,246,.15)',borderRadius:'12px',padding:'12px',marginTop:'8px'}}>
+                    <p style={{fontSize:'10px',color:'#93c5fd',lineHeight:1.6}}>
+                        <strong>Autorité de contrôle :</strong> Vous pouvez déposer une plainte auprès de la <a href="https://www.cnil.fr" target="_blank" style={{color:'#60a5fa'}}>CNIL</a> — 3 Place de Fontenoy, 75007 Paris — si vous estimez que vos droits ne sont pas respectés.
+                    </p>
                 </div>
             </div>
         </div>
