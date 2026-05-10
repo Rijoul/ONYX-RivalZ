@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>APEX · Défis Sportifs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { font-family: 'DM Sans', sans-serif; background: #020617; height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; }
+        #root { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* SCROLLBARS */
+        .custom-scroll::-webkit-scrollbar { width: 3px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+
+        /* AUTH */
+        @keyframes fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes orb1 { 0%,100%{transform:translate(0,0)scale(1)} 33%{transform:translate(40px,-30px)scale(1.1)} 66%{transform:translate(-20px,20px)scale(.95)} }
+        @keyframes orb2 { 0%,100%{transform:translate(0,0)scale(1)} 33%{transform:translate(-50px,20px)scale(1.05)} 66%{transform:translate(30px,-40px)scale(1.1)} }
+        @keyframes float { 0%,100%{transform:translateY(0)rotate(-1deg)} 50%{transform:translateY(-10px)rotate(1deg)} }
+        @keyframes shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
+        @keyframes logoPulse { 0%,100%{box-shadow:0 0 0 0 rgba(234,88,12,.4),0 0 40px rgba(234,88,12,.2)} 50%{box-shadow:0 0 0 12px rgba(234,88,12,0),0 0 60px rgba(234,88,12,.4)} }
+        @keyframes borderGlow { 0%,100%{border-color:rgba(234,88,12,.25)} 50%{border-color:rgba(234,88,12,.55)} }
+        @keyframes slideUp { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pop { from{transform:scale(.8);opacity:0} to{transform:scale(1);opacity:1} }
+        @keyframes spin { to{transform:rotate(360deg)} }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+        @keyframes countUp { from{transform:translateY(8px);opacity:0} to{transform:translateY(0);opacity:1} }
+        @keyframes progressFill { from{width:0} to{width:var(--prog-w)} }
+        @keyframes dash { to{stroke-dashoffset:0} }
+        @keyframes firework { 0%{transform:scale(0) rotate(0deg);opacity:1} 100%{transform:scale(1.4) rotate(20deg);opacity:0} }
+        @keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes tabActive { from{width:0} to{width:100%} }
+
+        .auth-card { animation: fadeUp .7s cubic-bezier(.16,1,.3,1) both; }
+        .auth-logo { animation: float 4s ease-in-out infinite; }
+        .auth-logo-glow { animation: logoPulse 3s ease-in-out infinite; }
+        .auth-orb-1 { animation: orb1 8s ease-in-out infinite; }
+        .auth-orb-2 { animation: orb2 10s ease-in-out infinite; }
+        .shimmer-text { background: linear-gradient(90deg,#fdba74 0%,#fff 40%,#f97316 60%,#fdba74 100%); background-size:200% auto; -webkit-background-clip:text; -webkit-text-fill-color:transparent; animation:shimmer 3s linear infinite; }
+        .anim-border { animation: borderGlow 2.5s ease-in-out infinite; }
+        .input-glow:focus { border-color:#f97316!important; box-shadow:0 0 0 3px rgba(249,115,22,.12); }
+        .auth-field { animation: fadeUp .6s cubic-bezier(.16,1,.3,1) both; }
+        .auth-field:nth-child(1){animation-delay:.15s} .auth-field:nth-child(2){animation-delay:.25s} .auth-field:nth-child(3){animation-delay:.35s}
+        .auth-btn { position:relative; overflow:hidden; }
+        .auth-btn::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,.12),transparent); opacity:0; transition:opacity .3s; }
+        .auth-btn:hover::before { opacity:1; }
+
+        /* APP */
+        .card { background: rgba(15,23,42,.8); border:1px solid rgba(30,41,59,.8); border-radius:20px; }
+        .card-glow { background: rgba(15,23,42,.9); border:1px solid rgba(234,88,12,.2); border-radius:20px; }
+        .fade-in { animation: fadeUp .35s cubic-bezier(.16,1,.3,1) both; }
+        .pop { animation: pop .25s cubic-bezier(.175,.885,.32,1.275) both; }
+        .slide-up { animation: slideUp .4s cubic-bezier(.16,1,.3,1) both; }
+        .slide-down { animation: slideDown .25s cubic-bezier(.16,1,.3,1) both; }
+
+        /* NAV */
+        .nav-item { display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 20px; cursor:pointer; transition:all .2s; border-radius:14px; position:relative; }
+        .nav-item.active { background:rgba(234,88,12,.1); }
+        .nav-item.active::after { content:''; position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); width:20px; height:3px; background:#f97316; border-radius:2px; animation:tabActive .2s ease-out both; }
+
+        /* BADGE */
+        .badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:99px; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+        .badge-orange { background:rgba(234,88,12,.15); border:1px solid rgba(234,88,12,.3); color:#fb923c; }
+        .badge-green { background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.25); color:#4ade80; }
+        .badge-blue { background:rgba(59,130,246,.1); border:1px solid rgba(59,130,246,.25); color:#60a5fa; }
+        .badge-red { background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.25); color:#f87171; }
+        .badge-yellow { background:rgba(234,179,8,.1); border:1px solid rgba(234,179,8,.25); color:#facc15; }
+        .badge-slate { background:rgba(100,116,139,.1); border:1px solid rgba(100,116,139,.25); color:#94a3b8; }
+
+        /* PROGRESS */
+        .progress-bar { height:6px; background:#1e293b; border-radius:3px; overflow:hidden; }
+        .progress-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,#ea580c,#f97316); width:var(--prog-w,0%); transition:width 1s cubic-bezier(.16,1,.3,1); }
+
+        /* MODAL */
+        .modal-overlay { position:fixed; inset:0; z-index:100; background:rgba(2,6,23,.9); backdrop-filter:blur(16px); display:flex; align-items:flex-end; justify-content:center; padding:16px; animation:fadeUp .2s ease-out; }
+        .modal-sheet { background:#0f172a; border:1px solid #1e293b; border-radius:28px 28px 20px 20px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; }
+
+        /* CHALLENGE CARD */
+        .challenge-card { background:rgba(15,23,42,.9); border:1px solid rgba(30,41,59,.8); border-radius:20px; transition:all .2s; cursor:pointer; }
+        .challenge-card:hover { border-color:rgba(234,88,12,.35); transform:translateY(-1px); }
+        .challenge-card.mine { border-color:rgba(234,88,12,.3); background:rgba(234,88,12,.04); }
+        .challenge-card.won { border-color:rgba(34,197,94,.3); background:rgba(34,197,94,.04); }
+        .challenge-card.lost { border-color:rgba(239,68,68,.2); background:rgba(239,68,68,.03); }
+
+        /* STAT CARD */
+        .stat-card { background:rgba(15,23,42,.9); border:1px solid rgba(30,41,59,.8); border-radius:18px; padding:16px; }
+
+        /* RING */
+        .ring-svg { transform:rotate(-90deg); }
+        .ring-track { fill:none; stroke:#1e293b; stroke-width:8; }
+        .ring-fill { fill:none; stroke-width:8; stroke-linecap:round; stroke-dasharray:var(--ring-dash,251); stroke-dashoffset:var(--ring-offset,251); transition:stroke-dashoffset 1.2s cubic-bezier(.16,1,.3,1); }
+
+        /* EMOJI */
+        .emoji-native { font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif!important; line-height:1; display:inline-block; }
+
+        /* TOGGLE */
+        .toggle-track { width:44px; height:24px; border-radius:12px; transition:background .3s; cursor:pointer; position:relative; flex-shrink:0; }
+        .toggle-thumb { width:18px; height:18px; border-radius:50%; background:white; position:absolute; top:3px; transition:left .3s cubic-bezier(.175,.885,.32,1.275); box-shadow:0 1px 4px rgba(0,0,0,.3); }
+
+        textarea { resize:none; }
+        input, textarea { outline:none; color:white; }
+        input::placeholder, textarea::placeholder { color:#475569; }
+
+        /* SCROLL CONTAINER */
+        .scroll-area { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+// ── SAME FIREBASE AS ONYX CHAT ──────────────────────────────────────────
+const firebaseConfig = {
+    apiKey: "AIzaSyCkiMirg--YtJMCENWm6Ba4qBn7XY55qrQ",
+    authDomain: "onyx-chat-by-rijoul.firebaseapp.com",
+    projectId: "onyx-chat-by-rijoul",
+    storageBucket: "onyx-chat-by-rijoul.firebasestorage.app",
+    messagingSenderId: "699855199393",
+    appId: "1:699855199393:web:0b454be9733e3853ada4e0"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+const ONYX_APP_ID = 'onyx-pro-chat';
+const APEX_APP_ID = 'apex-sport-challenges';
+const getAvatar = (name) => `https://ui-avatars.com/api/?name=${encodeURIComponent(name||'User')}&background=ea580c&color=fff&bold=true&rounded=true`;
+
+const SPORT_ICONS = {
+    running: '🏃', cycling: '🚴', swimming: '🏊', pushups: '💪', pullups: '🏋️',
+    situps: '🔥', plank: '🧘', walking: '🚶', yoga: '🧘', football: '⚽',
+    basketball: '🏀', tennis: '🎾', hiking: '🥾', rowing: '🚣', jumping: '⚡',
+    squats: '🏋️', burpees: '💥', custom: '🎯'
+};
+const SPORT_LIST = [
+    { id:'running', label:'Course à pied', unit:'km' },
+    { id:'cycling', label:'Cyclisme', unit:'km' },
+    { id:'swimming', label:'Natation', unit:'m' },
+    { id:'pushups', label:'Pompes', unit:'reps' },
+    { id:'pullups', label:'Tractions', unit:'reps' },
+    { id:'situps', label:'Abdos', unit:'reps' },
+    { id:'squats', label:'Squats', unit:'reps' },
+    { id:'burpees', label:'Burpees', unit:'reps' },
+    { id:'plank', label:'Gainage', unit:'sec' },
+    { id:'walking', label:'Marche', unit:'km' },
+    { id:'hiking', label:'Randonnée', unit:'km' },
+    { id:'basketball', label:'Basket', unit:'points' },
+    { id:'tennis', label:'Tennis', unit:'sets' },
+    { id:'football', label:'Football', unit:'buts' },
+    { id:'jumping', label:'Sauts', unit:'reps' },
+    { id:'custom', label:'Autre', unit:'pts' },
+];
+
+const LOGO = () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%" fill="none">
+        <defs>
+            <linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#f97316"/>
+                <stop offset="100%" stopColor="#ea580c"/>
+            </linearGradient>
+        </defs>
+        <polygon points="24,4 44,16 44,32 24,44 4,32 4,16" fill="url(#lg1)" opacity=".15" stroke="#f97316" strokeWidth="1.5"/>
+        <polygon points="24,10 38,18 38,30 24,38 10,30 10,18" fill="none" stroke="#f97316" strokeWidth="1" opacity=".4"/>
+        <path d="M18 18 L24 14 L30 18 L28 26 L24 30 L20 26 Z" fill="#f97316" opacity=".9"/>
+        <path d="M24 14 L24 30" stroke="#fff" strokeWidth="1.5" opacity=".3"/>
+        <path d="M18 18 L30 26" stroke="#fff" strokeWidth="1" opacity=".2"/>
+        <path d="M30 18 L18 26" stroke="#fff" strokeWidth="1" opacity=".2"/>
+    </svg>
+);
+
+// ── ICON ────────────────────────────────────────────────────────────────
+const Icon = ({ name, size=18, className='' }) => {
+    const paths = {
+        home: <><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>,
+        trophy: <><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></>,
+        plus: <path d="M12 5v14M5 12h14"/>,
+        user: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
+        users: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
+        x: <path d="M18 6 6 18M6 6l12 12"/>,
+        check: <path d="M20 6 9 17l-5-5"/>,
+        arrowRight: <path d="M5 12h14M12 5l7 7-7 7"/>,
+        flame: <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>,
+        target: <><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></>,
+        clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+        zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>,
+        settings: <><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2zM12 15a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></>,
+        logout: <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>,
+        send: <><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></>,
+        edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
+        trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>,
+        bell: <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>,
+        medal: <><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></>,
+        star: <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>,
+        chartbar: <><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>,
+        arrowUp: <path d="M12 19V5M5 12l7-7 7 7"/>,
+        copy: <><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></>,
+    };
+    return (
+        <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            {paths[name]}
+        </svg>
+    );
+};
+
+// ── AUTH SCREEN (same style as ONYX CHAT) ──────────────────────────────
+const AuthScreen = () => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [displayName, setDisplayName] = useState('');
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [authError, setAuthError] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleAuth = async (e) => {
+        e.preventDefault();
+        setAuthError(''); setLoading(true);
+        try {
+            if (isRegistering) await auth.createUserWithEmailAndPassword(email, password);
+            else await auth.signInWithEmailAndPassword(email, password);
+        } catch(err) {
+            const msgs = {
+                'auth/invalid-email':'Adresse email invalide.',
+                'auth/user-not-found':'Aucun compte trouvé.',
+                'auth/wrong-password':'Mot de passe incorrect.',
+                'auth/email-already-in-use':'Email déjà utilisé.',
+                'auth/weak-password':'Mot de passe trop court (6 caractères min).',
+                'auth/invalid-credential':'Email ou mot de passe incorrect.',
+            };
+            setAuthError(msgs[err.code] || err.message);
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div style={{height:'100dvh',background:'#020617',display:'flex',alignItems:'center',justifyContent:'center',padding:'16px',overflow:'hidden',position:'relative'}}>
+            <div style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none'}}>
+                <div className="auth-orb-1" style={{position:'absolute',top:'10%',left:'5%',width:'320px',height:'320px',borderRadius:'50%',background:'radial-gradient(circle,rgba(234,88,12,.18) 0%,transparent 70%)',filter:'blur(40px)'}}/>
+                <div className="auth-orb-2" style={{position:'absolute',bottom:'10%',right:'5%',width:'280px',height:'280px',borderRadius:'50%',background:'radial-gradient(circle,rgba(251,146,60,.12) 0%,transparent 70%)',filter:'blur(40px)'}}/>
+                <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(234,88,12,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(234,88,12,.03) 1px,transparent 1px)',backgroundSize:'48px 48px'}}/>
+            </div>
+            <div className="auth-card" style={{width:'100%',maxWidth:'400px',position:'relative',zIndex:1}}>
+                <div style={{textAlign:'center',marginBottom:'32px'}}>
+                    <div className="auth-logo auth-logo-glow" style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:'80px',height:'80px',background:'#0f172a',borderRadius:'24px',marginBottom:'20px',border:'1px solid rgba(234,88,12,.4)',overflow:'hidden'}}>
+                        <LOGO/>
+                    </div>
+                    <h1 className="shimmer-text" style={{fontFamily:'Syne,sans-serif',fontSize:'28px',fontWeight:800,letterSpacing:'.15em',marginBottom:'6px',textTransform:'uppercase'}}>APEX</h1>
+                    <p style={{color:'#ea580c',fontSize:'10px',fontWeight:700,letterSpacing:'.2em',textTransform:'uppercase'}}>Défis Sportifs</p>
+                    <p style={{color:'#475569',fontSize:'10px',fontWeight:600,letterSpacing:'.1em',textTransform:'uppercase',marginTop:'4px'}}>
+                        {isRegistering ? 'Créez votre compte athlète' : 'Rejoignez vos défis'}
+                    </p>
+                </div>
+                <div className="anim-border" style={{background:'rgba(15,23,42,.8)',border:'1px solid rgba(234,88,12,.2)',borderRadius:'28px',padding:'28px',backdropFilter:'blur(20px)',boxShadow:'0 25px 50px rgba(0,0,0,.5)'}}>
+                    <div style={{display:'flex',background:'rgba(2,6,23,.6)',borderRadius:'14px',padding:'4px',marginBottom:'24px',border:'1px solid #1e293b'}}>
+                        {['Connexion','Inscription'].map((label,i) => (
+                            <button key={i} onClick={() => { setIsRegistering(i===1); setAuthError(''); }}
+                                style={{flex:1,padding:'8px',borderRadius:'10px',fontSize:'11px',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',transition:'all .25s',background:isRegistering===(i===1)?'#ea580c':'transparent',color:isRegistering===(i===1)?'white':'#64748b',border:'none',cursor:'pointer',fontFamily:'Syne,sans-serif'}}>
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                    <form onSubmit={handleAuth} style={{display:'flex',flexDirection:'column',gap:'12px'}}>
+                        {authError && (
+                            <div style={{background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.3)',borderRadius:'12px',padding:'10px 14px',color:'#f87171',fontSize:'11px',fontWeight:600,display:'flex',alignItems:'center',gap:'8px'}}>
+                                <span>⚠</span>{authError}
+                            </div>
+                        )}
+                        {isRegistering && (
+                            <div className="auth-field" style={{position:'relative'}}>
+                                <input type="text" required placeholder="Pseudo athlète" className="input-glow"
+                                    style={{width:'100%',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'14px',padding:'13px 16px 13px 44px',fontSize:'13px',transition:'all .25s',fontFamily:'DM Sans,sans-serif',boxSizing:'border-box'}}
+                                    value={displayName} onChange={e => setDisplayName(e.target.value)}/>
+                                <div style={{position:'absolute',left:'14px',top:'50%',transform:'translateY(-50%)',color:'#475569'}}>
+                                    <Icon name="user" size={16}/>
+                                </div>
+                            </div>
+                        )}
+                        <div className="auth-field" style={{position:'relative'}}>
+                            <input type="email" required placeholder="Adresse email" className="input-glow"
+                                style={{width:'100%',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'14px',padding:'13px 16px 13px 44px',fontSize:'13px',transition:'all .25s',fontFamily:'DM Sans,sans-serif',boxSizing:'border-box'}}
+                                value={email} onChange={e => setEmail(e.target.value)}/>
+                            <div style={{position:'absolute',left:'14px',top:'50%',transform:'translateY(-50%)',color:'#475569'}}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                            </div>
+                        </div>
+                        <div className="auth-field" style={{position:'relative'}}>
+                            <input type="password" required placeholder="Mot de passe" className="input-glow"
+                                style={{width:'100%',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'14px',padding:'13px 16px 13px 44px',fontSize:'13px',transition:'all .25s',fontFamily:'DM Sans,sans-serif',boxSizing:'border-box'}}
+                                value={password} onChange={e => setPassword(e.target.value)}/>
+                            <div style={{position:'absolute',left:'14px',top:'50%',transform:'translateY(-50%)',color:'#475569'}}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            </div>
+                        </div>
+                        <button type="submit" disabled={loading} className="auth-btn"
+                            style={{marginTop:'8px',width:'100%',background:loading?'#9a3412':'linear-gradient(135deg,#ea580c,#c2410c)',border:'1px solid rgba(251,146,60,.3)',borderRadius:'14px',padding:'14px',color:'white',fontWeight:800,fontSize:'12px',letterSpacing:'.12em',textTransform:'uppercase',cursor:loading?'not-allowed':'pointer',transition:'all .25s',boxShadow:'0 4px 20px rgba(234,88,12,.3)',fontFamily:'Syne,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
+                            {loading ? (<><div style={{width:'16px',height:'16px',border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .7s linear infinite'}}/> Chargement...</>) : (isRegistering ? '⚡ Créer mon profil' : '⚡ Entrer en compétition')}
+                        </button>
+                    </form>
+                    <div style={{marginTop:'20px',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
+                        <div style={{height:'1px',flex:1,background:'rgba(30,41,59,.8)'}}/>
+                        <div style={{display:'flex',alignItems:'center',gap:'5px',padding:'4px 10px',background:'rgba(234,88,12,.06)',border:'1px solid rgba(234,88,12,.15)',borderRadius:'20px'}}>
+                            <span className="emoji-native" style={{fontSize:'10px'}}>⚡</span>
+                            <span style={{color:'#f97316',fontSize:'9px',fontWeight:800,letterSpacing:'.15em',textTransform:'uppercase'}}>Profil ONYX compatible</span>
+                        </div>
+                        <div style={{height:'1px',flex:1,background:'rgba(30,41,59,.8)'}}/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ── HELPERS ─────────────────────────────────────────────────────────────
+const formatDate = (ts) => {
+    if (!ts) return '';
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
+};
+const daysLeft = (deadline) => {
+    if (!deadline) return null;
+    const d = deadline.toDate ? deadline.toDate() : new Date(deadline);
+    const diff = Math.ceil((d - new Date()) / 86400000);
+    return diff;
+};
+const progressPct = (current, goal) => Math.min(100, Math.round((current / goal) * 100));
+
+// ── CREATE CHALLENGE MODAL ──────────────────────────────────────────────
+const CreateChallengeModal = ({ user, profile, friends, friendProfiles, onClose }) => {
+    const [step, setStep] = useState(1);
+    const [form, setForm] = useState({
+        title: '', sport: '', unit: '', goal: '', deadline: '', description: '',
+        challengedUid: '', isPublic: false,
+    });
+    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
+
+    const selectedSport = SPORT_LIST.find(s => s.id === form.sport);
+
+    const handleSubmit = async () => {
+        if (!form.sport || !form.goal || !form.challengedUid) return;
+        setLoading(true);
+        try {
+            const challengedProfile = friendProfiles[form.challengedUid] || {};
+            const deadline = form.deadline ? firebase.firestore.Timestamp.fromDate(new Date(form.deadline)) : null;
+            await db.collection(APEX_APP_ID).add({
+                title: form.title || `Défi ${selectedSport?.label || form.sport}`,
+                sport: form.sport,
+                unit: form.unit || selectedSport?.unit || 'pts',
+                goal: Number(form.goal),
+                description: form.description,
+                deadline,
+                isPublic: form.isPublic,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                createdBy: user.uid,
+                createdByName: profile.displayName,
+                createdByPhoto: profile.photoURL || getAvatar(profile.displayName),
+                challengedUid: form.challengedUid,
+                challengedName: challengedProfile.displayName || 'Adversaire',
+                challengedPhoto: challengedProfile.photoURL || getAvatar(challengedProfile.displayName),
+                status: 'pending', // pending | active | completed
+                progress: {
+                    [user.uid]: 0,
+                    [form.challengedUid]: 0,
+                },
+                accepted: false,
+            });
+            setSuccess(true);
+            setTimeout(onClose, 1500);
+        } catch(e) { console.error(e); setLoading(false); }
+    };
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-sheet" style={{borderRadius:'28px'}} onClick={e => e.stopPropagation()}>
+                {success ? (
+                    <div style={{padding:'48px 32px',textAlign:'center'}}>
+                        <div style={{fontSize:'56px',marginBottom:'16px',animation:'pop .4s ease-out'}} className="emoji-native">🏆</div>
+                        <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'18px',color:'white',marginBottom:'8px'}}>Défi lancé !</h3>
+                        <p style={{color:'#64748b',fontSize:'12px'}}>Votre adversaire va être notifié.</p>
+                    </div>
+                ) : (
+                    <>
+                        {/* Header */}
+                        <div style={{padding:'20px 20px 0',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                            <div>
+                                <p style={{color:'#ea580c',fontSize:'9px',fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase'}}>Nouveau défi · Étape {step}/3</p>
+                                <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginTop:'2px'}}>
+                                    {step===1 ? 'Choisissez le sport' : step===2 ? "L'objectif" : "L'adversaire"}
+                                </h3>
+                            </div>
+                            <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'12px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
+                                <Icon name="x" size={16}/>
+                            </button>
+                        </div>
+
+                        {/* Progress */}
+                        <div style={{padding:'12px 20px',display:'flex',gap:'6px'}}>
+                            {[1,2,3].map(i => (
+                                <div key={i} style={{height:'3px',flex:1,background:step>=i?'#ea580c':'#1e293b',borderRadius:'2px',transition:'background .3s'}}/>
+                            ))}
+                        </div>
+
+                        <div style={{padding:'0 20px 20px',maxHeight:'65vh',overflowY:'auto'}} className="custom-scroll">
+                            {/* STEP 1: SPORT */}
+                            {step === 1 && (
+                                <div className="fade-in">
+                                    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'8px',marginBottom:'16px'}}>
+                                        {SPORT_LIST.map(s => (
+                                            <button key={s.id} onClick={() => setForm(f => ({...f, sport:s.id, unit:s.unit}))}
+                                                style={{padding:'12px 8px',borderRadius:'14px',border:`1px solid ${form.sport===s.id?'#ea580c':'#1e293b'}`,background:form.sport===s.id?'rgba(234,88,12,.12)':'rgba(15,23,42,.8)',cursor:'pointer',textAlign:'center',transition:'all .15s'}}>
+                                                <div style={{fontSize:'20px',marginBottom:'4px'}} className="emoji-native">{SPORT_ICONS[s.id]}</div>
+                                                <p style={{fontSize:'9px',fontWeight:700,color:form.sport===s.id?'#f97316':'#94a3b8',letterSpacing:'.05em',textTransform:'uppercase',lineHeight:1.2}}>{s.label}</p>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div style={{marginBottom:'12px'}}>
+                                        <label style={{color:'#64748b',fontSize:'9px',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',display:'block',marginBottom:'6px'}}>Titre du défi (optionnel)</label>
+                                        <input className="input-glow" placeholder={`Défi ${selectedSport?.label||'sportif'}`}
+                                            style={{width:'100%',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'12px',padding:'11px 14px',fontSize:'13px',transition:'all .25s',fontFamily:'DM Sans,sans-serif',boxSizing:'border-box'}}
+                                            value={form.title} onChange={e => setForm(f=>({...f,title:e.target.value}))}/>
+                                    </div>
+                                    <button disabled={!form.sport} onClick={() => setStep(2)}
+                                        style={{width:'100%',padding:'14px',borderRadius:'14px',background:form.sport?'linear-gradient(135deg,#ea580c,#c2410c)':'#1e293b',color:form.sport?'white':'#64748b',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:form.sport?'pointer':'not-allowed',transition:'all .2s'}}>
+                                        Suivant →
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* STEP 2: OBJECTIF */}
+                            {step === 2 && (
+                                <div className="fade-in" style={{display:'flex',flexDirection:'column',gap:'12px'}}>
+                                    <div>
+                                        <label style={{color:'#64748b',fontSize:'9px',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',display:'block',marginBottom:'6px'}}>Objectif ({form.unit || selectedSport?.unit || 'pts'})</label>
+                                        <input type="number" min="1" className="input-glow" placeholder="Ex: 100"
+                                            style={{width:'100%',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'12px',padding:'11px 14px',fontSize:'20px',fontWeight:700,transition:'all .25s',fontFamily:'Syne,sans-serif',boxSizing:'border-box'}}
+                                            value={form.goal} onChange={e => setForm(f=>({...f,goal:e.target.value}))}/>
+                                    </div>
+                                    <div>
+                                        <label style={{color:'#64748b',fontSize:'9px',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',display:'block',marginBottom:'6px'}}>Unité</label>
+                                        <input className="input-glow" placeholder={selectedSport?.unit||'pts'}
+                                            style={{width:'100%',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'12px',padding:'11px 14px',fontSize:'13px',transition:'all .25s',fontFamily:'DM Sans,sans-serif',boxSizing:'border-box'}}
+                                            value={form.unit} onChange={e => setForm(f=>({...f,unit:e.target.value}))}/>
+                                    </div>
+                                    <div>
+                                        <label style={{color:'#64748b',fontSize:'9px',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',display:'block',marginBottom:'6px'}}>Date limite (optionnel)</label>
+                                        <input type="date" className="input-glow"
+                                            style={{width:'100%',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'12px',padding:'11px 14px',fontSize:'13px',transition:'all .25s',fontFamily:'DM Sans,sans-serif',boxSizing:'border-box',colorScheme:'dark'}}
+                                            value={form.deadline} onChange={e => setForm(f=>({...f,deadline:e.target.value}))}/>
+                                    </div>
+                                    <div>
+                                        <label style={{color:'#64748b',fontSize:'9px',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',display:'block',marginBottom:'6px'}}>Description (optionnel)</label>
+                                        <textarea className="input-glow" rows="2" placeholder="Règles, contexte..."
+                                            style={{width:'100%',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'12px',padding:'11px 14px',fontSize:'12px',transition:'all .25s',fontFamily:'DM Sans,sans-serif',boxSizing:'border-box'}}
+                                            value={form.description} onChange={e => setForm(f=>({...f,description:e.target.value}))}/>
+                                    </div>
+                                    <div style={{display:'flex',gap:'8px'}}>
+                                        <button onClick={() => setStep(1)} style={{flex:1,padding:'12px',borderRadius:'14px',background:'rgba(30,41,59,.8)',color:'#94a3b8',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',letterSpacing:'.1em',textTransform:'uppercase',border:'1px solid #1e293b',cursor:'pointer'}}>← Retour</button>
+                                        <button disabled={!form.goal} onClick={() => setStep(3)}
+                                            style={{flex:2,padding:'12px',borderRadius:'14px',background:form.goal?'linear-gradient(135deg,#ea580c,#c2410c)':'#1e293b',color:form.goal?'white':'#64748b',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:form.goal?'pointer':'not-allowed'}}>
+                                            Suivant →
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* STEP 3: CHALLENGER */}
+                            {step === 3 && (
+                                <div className="fade-in" style={{display:'flex',flexDirection:'column',gap:'12px'}}>
+                                    <p style={{color:'#64748b',fontSize:'11px',fontWeight:500}}>Choisissez votre adversaire parmi vos contacts ONYX :</p>
+                                    {friends.length === 0 ? (
+                                        <div style={{textAlign:'center',padding:'32px 16px',background:'rgba(15,23,42,.8)',borderRadius:'16px',border:'1px solid #1e293b'}}>
+                                            <div style={{fontSize:'32px',marginBottom:'8px'}} className="emoji-native">👥</div>
+                                            <p style={{color:'#64748b',fontSize:'11px'}}>Ajoutez des amis dans ONYX CHAT pour les défier.</p>
+                                        </div>
+                                    ) : (
+                                        <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+                                            {friends.map(f => {
+                                                const fd = friendProfiles[f.uid] || {};
+                                                const selected = form.challengedUid === f.uid;
+                                                return (
+                                                    <button key={f.uid} onClick={() => setForm(frm => ({...frm, challengedUid: f.uid}))}
+                                                        style={{display:'flex',alignItems:'center',gap:'12px',padding:'12px',borderRadius:'14px',border:`1px solid ${selected?'#ea580c':'#1e293b'}`,background:selected?'rgba(234,88,12,.1)':'rgba(15,23,42,.8)',cursor:'pointer',textAlign:'left',transition:'all .15s'}}>
+                                                        <img src={fd.photoURL||getAvatar(fd.displayName)} style={{width:'40px',height:'40px',borderRadius:'12px',objectFit:'cover'}}/>
+                                                        <div style={{flex:1}}>
+                                                            <p style={{fontWeight:700,fontSize:'13px',color:'white'}}>{fd.displayName||'Contact'}</p>
+                                                            <p style={{fontSize:'9px',color:'#64748b',textTransform:'uppercase',letterSpacing:'.06em'}}>Membre APEX</p>
+                                                        </div>
+                                                        {selected && <div style={{width:'20px',height:'20px',borderRadius:'50%',background:'#ea580c',display:'flex',alignItems:'center',justifyContent:'center'}}><Icon name="check" size={12} className="text-white"/></div>}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {/* Summary */}
+                                    {form.challengedUid && (
+                                        <div style={{background:'rgba(234,88,12,.06)',border:'1px solid rgba(234,88,12,.2)',borderRadius:'14px',padding:'14px'}}>
+                                            <p style={{color:'#ea580c',fontSize:'9px',fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',marginBottom:'8px'}}>Récap du défi</p>
+                                            <div style={{display:'flex',gap:'12px',fontSize:'12px',color:'#cbd5e1'}}>
+                                                <span className="emoji-native">{SPORT_ICONS[form.sport]}</span>
+                                                <span style={{fontWeight:600}}>{form.title || selectedSport?.label}</span>
+                                                <span style={{marginLeft:'auto',fontFamily:'Syne,sans-serif',fontWeight:800,color:'#f97316'}}>{form.goal} {form.unit || selectedSport?.unit}</span>
+                                            </div>
+                                            {form.deadline && <p style={{fontSize:'10px',color:'#64748b',marginTop:'4px'}}>Avant le {new Date(form.deadline).toLocaleDateString('fr-FR',{day:'numeric',month:'long'})}</p>}
+                                        </div>
+                                    )}
+
+                                    <div style={{display:'flex',gap:'8px'}}>
+                                        <button onClick={() => setStep(2)} style={{flex:1,padding:'12px',borderRadius:'14px',background:'rgba(30,41,59,.8)',color:'#94a3b8',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',letterSpacing:'.1em',textTransform:'uppercase',border:'1px solid #1e293b',cursor:'pointer'}}>← Retour</button>
+                                        <button disabled={!form.challengedUid||loading} onClick={handleSubmit}
+                                            style={{flex:2,padding:'12px',borderRadius:'14px',background:form.challengedUid&&!loading?'linear-gradient(135deg,#ea580c,#c2410c)':'#1e293b',color:form.challengedUid&&!loading?'white':'#64748b',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:form.challengedUid&&!loading?'pointer':'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
+                                            {loading ? <><div style={{width:'14px',height:'14px',border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .7s linear infinite'}}/> Envoi...</> : '⚡ Lancer le défi'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// ── UPDATE PROGRESS MODAL ───────────────────────────────────────────────
+const UpdateProgressModal = ({ challenge, user, onClose }) => {
+    const myProgress = challenge.progress?.[user.uid] || 0;
+    const [value, setValue] = useState(myProgress);
+    const [loading, setLoading] = useState(false);
+
+    const handleUpdate = async () => {
+        setLoading(true);
+        const newVal = Number(value);
+        const updates = { [`progress.${user.uid}`]: newVal };
+
+        // Check if completed
+        const otherUid = challenge.createdBy === user.uid ? challenge.challengedUid : challenge.createdBy;
+        const otherProgress = challenge.progress?.[otherUid] || 0;
+
+        if (newVal >= challenge.goal) {
+            updates.status = 'completed';
+            updates.winner = user.uid;
+        } else if (otherProgress >= challenge.goal) {
+            updates.status = 'completed';
+            updates.winner = otherUid;
+        } else {
+            updates.status = 'active';
+        }
+
+        await db.collection(APEX_APP_ID).doc(challenge.id).update(updates);
+        setLoading(false);
+        onClose();
+    };
+
+    const pct = Math.min(100, Math.round((value / challenge.goal) * 100));
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-sheet" style={{padding:'24px',borderRadius:'28px'}} onClick={e => e.stopPropagation()}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'20px'}}>
+                    <div>
+                        <p style={{color:'#ea580c',fontSize:'9px',fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase'}}>Mise à jour</p>
+                        <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginTop:'2px'}}>{challenge.title}</h3>
+                    </div>
+                    <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'12px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}>
+                        <Icon name="x" size={16}/>
+                    </button>
+                </div>
+
+                <div style={{textAlign:'center',marginBottom:'24px'}}>
+                    <div style={{fontSize:'40px',marginBottom:'4px'}} className="emoji-native">{SPORT_ICONS[challenge.sport]}</div>
+                    <div style={{display:'flex',alignItems:'baseline',justifyContent:'center',gap:'6px'}}>
+                        <input type="number" min="0" max={challenge.goal * 2}
+                            style={{background:'transparent',border:'none',fontSize:'48px',fontFamily:'Syne,sans-serif',fontWeight:800,color:'#f97316',textAlign:'center',width:'160px'}}
+                            value={value} onChange={e => setValue(e.target.value)}/>
+                        <span style={{color:'#64748b',fontSize:'14px',fontWeight:600}}>/{challenge.goal} {challenge.unit}</span>
+                    </div>
+                    <div className="progress-bar" style={{marginTop:'12px'}}>
+                        <div className="progress-fill" style={{'--prog-w': pct+'%'}}/>
+                    </div>
+                    <p style={{color:'#64748b',fontSize:'11px',marginTop:'6px'}}>{pct}% accompli</p>
+                </div>
+
+                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'8px',marginBottom:'20px'}}>
+                    {[25,50,75,100].map(p => {
+                        const v = Math.round((challenge.goal * p) / 100);
+                        return (
+                            <button key={p} onClick={() => setValue(v)}
+                                style={{padding:'10px 4px',borderRadius:'12px',border:'1px solid #1e293b',background:'rgba(15,23,42,.8)',cursor:'pointer',textAlign:'center'}}>
+                                <p style={{color:'#f97316',fontSize:'12px',fontWeight:800,fontFamily:'Syne,sans-serif'}}>{p}%</p>
+                                <p style={{color:'#64748b',fontSize:'9px',marginTop:'2px'}}>{v} {challenge.unit}</p>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <button disabled={loading} onClick={handleUpdate}
+                    style={{width:'100%',padding:'14px',borderRadius:'14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
+                    {loading ? <><div style={{width:'14px',height:'14px',border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .7s linear infinite'}}/> Sauvegarde...</> : '✓ Enregistrer ma progression'}
+                </button>
+            </div>
+        </div>
+    );
+};
+
+// ── CHALLENGE CARD ──────────────────────────────────────────────────────
+const ChallengeCard = ({ challenge, user, onUpdate, onAccept, onDecline }) => {
+    const isCreator = challenge.createdBy === user.uid;
+    const otherName = isCreator ? challenge.challengedName : challenge.createdByName;
+    const otherPhoto = isCreator ? challenge.challengedPhoto : challenge.createdByPhoto;
+    const otherUid = isCreator ? challenge.challengedUid : challenge.createdBy;
+
+    const myProg = challenge.progress?.[user.uid] || 0;
+    const otherProg = challenge.progress?.[otherUid] || 0;
+    const myPct = progressPct(myProg, challenge.goal);
+    const otherPct = progressPct(otherProg, challenge.goal);
+    const dl = daysLeft(challenge.deadline);
+
+    const isWon = challenge.status === 'completed' && challenge.winner === user.uid;
+    const isLost = challenge.status === 'completed' && challenge.winner === otherUid;
+    const isPending = challenge.status === 'pending';
+    const isActive = challenge.status === 'active';
+
+    const cardClass = `challenge-card ${isWon?'won':''} ${isLost?'lost':''} ${isCreator&&!isWon&&!isLost?'mine':''}`;
+
+    return (
+        <div className={cardClass} style={{padding:'16px',marginBottom:'12px'}}>
+            {/* Header */}
+            <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:'14px'}}>
+                <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+                    <div style={{width:'36px',height:'36px',borderRadius:'10px',background:'rgba(234,88,12,.15)',border:'1px solid rgba(234,88,12,.25)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'18px'}} className="emoji-native">
+                        {SPORT_ICONS[challenge.sport]||'🎯'}
+                    </div>
+                    <div>
+                        <h4 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',color:'white',lineHeight:1.2}}>{challenge.title}</h4>
+                        <p style={{fontSize:'10px',color:'#64748b',marginTop:'2px'}}>
+                            {isCreator ? 'Vous avez défié' : 'Défié par'} <strong style={{color:'#94a3b8'}}>{otherName}</strong>
+                        </p>
+                    </div>
+                </div>
+                <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'4px'}}>
+                    {isWon && <span className="badge badge-green"><Icon name="trophy" size={9}/>Victoire</span>}
+                    {isLost && <span className="badge badge-red">Défaite</span>}
+                    {isPending && !isCreator && <span className="badge badge-yellow">En attente</span>}
+                    {isPending && isCreator && <span className="badge badge-slate">Envoyé</span>}
+                    {isActive && <span className="badge badge-orange"><Icon name="flame" size={9}/>En cours</span>}
+                    {dl !== null && isActive && <span style={{fontSize:'9px',color:dl<=2?'#f87171':'#64748b',fontWeight:700}}>J-{dl}</span>}
+                </div>
+            </div>
+
+            {/* Goal */}
+            <div style={{background:'rgba(2,6,23,.5)',borderRadius:'12px',padding:'10px 12px',marginBottom:'12px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                <span style={{color:'#64748b',fontSize:'10px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.08em'}}>Objectif</span>
+                <span style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'#f97316'}}>{challenge.goal} <span style={{fontSize:'11px',color:'#ea580c'}}>{challenge.unit}</span></span>
+            </div>
+
+            {/* VS Progress */}
+            {(isActive || isWon || isLost) && (
+                <div style={{marginBottom:'12px'}}>
+                    {/* Me */}
+                    <div style={{marginBottom:'8px'}}>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'5px'}}>
+                            <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                                <img src={user.photoURL||getAvatar(user.displayName||'Me')} style={{width:'20px',height:'20px',borderRadius:'6px',objectFit:'cover'}}/>
+                                <span style={{fontSize:'10px',fontWeight:700,color:'#e2e8f0'}}>Moi</span>
+                            </div>
+                            <span style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'12px',color:'#f97316'}}>{myProg}/{challenge.goal} {challenge.unit}</span>
+                        </div>
+                        <div className="progress-bar">
+                            <div className="progress-fill" style={{'--prog-w':myPct+'%'}}/>
+                        </div>
+                    </div>
+                    {/* Other */}
+                    <div>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'5px'}}>
+                            <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                                <img src={otherPhoto||getAvatar(otherName)} style={{width:'20px',height:'20px',borderRadius:'6px',objectFit:'cover'}}/>
+                                <span style={{fontSize:'10px',fontWeight:700,color:'#94a3b8'}}>{otherName}</span>
+                            </div>
+                            <span style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'12px',color:'#64748b'}}>{otherProg}/{challenge.goal} {challenge.unit}</span>
+                        </div>
+                        <div className="progress-bar">
+                            <div style={{height:'100%',borderRadius:'3px',background:'linear-gradient(90deg,#475569,#64748b)',width:otherPct+'%',transition:'width 1s cubic-bezier(.16,1,.3,1)'}}/>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Actions */}
+            {isPending && !isCreator && (
+                <div style={{display:'flex',gap:'8px'}}>
+                    <button onClick={() => onDecline(challenge.id)} style={{flex:1,padding:'10px',borderRadius:'12px',background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',color:'#f87171',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>Refuser</button>
+                    <button onClick={() => onAccept(challenge.id)} style={{flex:2,padding:'10px',borderRadius:'12px',background:'linear-gradient(135deg,#ea580c,#c2410c)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>⚡ Accepter</button>
+                </div>
+            )}
+            {isActive && (
+                <button onClick={() => onUpdate(challenge)}
+                    style={{width:'100%',padding:'10px',borderRadius:'12px',background:'rgba(234,88,12,.1)',border:'1px solid rgba(234,88,12,.25)',color:'#f97316',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
+                    <Icon name="edit" size={12}/>Mettre à jour ma progression
+                </button>
+            )}
+            {(isWon || isLost) && (
+                <div style={{textAlign:'center',padding:'8px',background:isWon?'rgba(34,197,94,.06)':'rgba(239,68,68,.06)',borderRadius:'12px',border:`1px solid ${isWon?'rgba(34,197,94,.2)':'rgba(239,68,68,.15)'}`}}>
+                    <span style={{fontSize:'18px'}} className="emoji-native">{isWon?'🏆':'💪'}</span>
+                    <p style={{fontSize:'10px',color:isWon?'#4ade80':'#f87171',fontWeight:700,marginTop:'2px'}}>{isWon?'Félicitations ! Défi remporté !':'Bon courage pour la prochaine !'}</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ── LEADERBOARD TAB ─────────────────────────────────────────────────────
+const LeaderboardTab = ({ user, friends, friendProfiles, challenges }) => {
+    const scores = useMemo(() => {
+        const map = {};
+        const allUids = [user.uid, ...friends.map(f => f.uid)];
+        allUids.forEach(uid => { map[uid] = { wins: 0, total: 0, pts: 0 }; });
+
+        challenges.forEach(c => {
+            if (c.status === 'completed' && c.winner) {
+                allUids.forEach(uid => {
+                    if (c.createdBy === uid || c.challengedUid === uid) {
+                        map[uid] = map[uid] || { wins: 0, total: 0, pts: 0 };
+                        map[uid].total++;
+                        if (c.winner === uid) { map[uid].wins++; map[uid].pts += 100; }
+                        else map[uid].pts += 10;
+                    }
+                });
+            }
+        });
+
+        return Object.entries(map)
+            .map(([uid, s]) => {
+                const isMe = uid === user.uid;
+                const p = isMe ? { displayName: 'Moi', photoURL: user.photoURL||getAvatar('Moi') } : (friendProfiles[uid] || {});
+                return { uid, ...s, displayName: p.displayName||'Joueur', photoURL: p.photoURL||getAvatar(p.displayName) };
+            })
+            .sort((a,b) => b.pts - a.pts || b.wins - a.wins);
+    }, [challenges, friends, friendProfiles, user]);
+
+    const medals = ['🥇','🥈','🥉'];
+
+    return (
+        <div>
+            <div style={{background:'rgba(234,88,12,.08)',border:'1px solid rgba(234,88,12,.2)',borderRadius:'20px',padding:'20px',marginBottom:'16px',textAlign:'center'}}>
+                <div style={{fontSize:'36px',marginBottom:'8px'}} className="emoji-native">🏆</div>
+                <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',letterSpacing:'.1em',textTransform:'uppercase'}}>Classement</h3>
+                <p style={{color:'#64748b',fontSize:'11px',marginTop:'4px'}}>Basé sur les défis complétés</p>
+            </div>
+
+            {scores.length === 0 ? (
+                <div style={{textAlign:'center',padding:'32px',color:'#64748b'}}>Aucun défi complété encore.</div>
+            ) : (
+                <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+                    {scores.map((s, i) => (
+                        <div key={s.uid} className="fade-in" style={{background:'rgba(15,23,42,.9)',border:`1px solid ${s.uid===user.uid?'rgba(234,88,12,.3)':'rgba(30,41,59,.8)'}`,borderRadius:'16px',padding:'14px 16px',display:'flex',alignItems:'center',gap:'12px',animationDelay:`${i*0.05}s`}}>
+                            <div style={{width:'28px',textAlign:'center',fontSize:'20px'}} className="emoji-native">
+                                {medals[i] || <span style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'14px',color:'#475569'}}>#{i+1}</span>}
+                            </div>
+                            <img src={s.photoURL} style={{width:'36px',height:'36px',borderRadius:'10px',objectFit:'cover'}}/>
+                            <div style={{flex:1}}>
+                                <p style={{fontWeight:700,fontSize:'13px',color:s.uid===user.uid?'#f97316':'white'}}>{s.displayName}</p>
+                                <p style={{fontSize:'10px',color:'#64748b'}}>{s.wins} victoire{s.wins!==1?'s':''} · {s.total} défi{s.total!==1?'s':''}</p>
+                            </div>
+                            <div style={{textAlign:'right'}}>
+                                <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'18px',color:'#f97316'}}>{s.pts}</p>
+                                <p style={{fontSize:'9px',color:'#64748b',textTransform:'uppercase',letterSpacing:'.08em'}}>pts</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ── PROFILE TAB ──────────────────────────────────────────────────────────
+const ProfileTab = ({ user, profile, setProfile, challenges }) => {
+    const [editing, setEditing] = useState(false);
+    const [nameInput, setNameInput] = useState(profile.displayName||'');
+    const [saving, setSaving] = useState(false);
+    const [copied, setCopied] = useState(false);
+
+    const myStats = useMemo(() => {
+        const mine = challenges.filter(c => c.createdBy === user.uid || c.challengedUid === user.uid);
+        const wins = mine.filter(c => c.status==='completed' && c.winner===user.uid).length;
+        const losses = mine.filter(c => c.status==='completed' && c.winner && c.winner!==user.uid).length;
+        const active = mine.filter(c => c.status==='active').length;
+        return { total: mine.length, wins, losses, active };
+    }, [challenges, user.uid]);
+
+    const saveProfile = async () => {
+        setSaving(true);
+        await db.collection('artifacts').doc(ONYX_APP_ID).collection('public').doc('data').collection('profiles').doc(user.uid).update({ displayName: nameInput });
+        setProfile(p => ({...p, displayName: nameInput}));
+        setEditing(false);
+        setSaving(false);
+    };
+
+    const copyId = () => {
+        navigator.clipboard.writeText(user.uid);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <div>
+            {/* Profile card */}
+            <div style={{background:'rgba(15,23,42,.9)',border:'1px solid rgba(234,88,12,.2)',borderRadius:'20px',padding:'24px',marginBottom:'16px',textAlign:'center'}}>
+                <div style={{position:'relative',display:'inline-block',marginBottom:'12px'}}>
+                    <img src={profile.photoURL||getAvatar(profile.displayName)} style={{width:'72px',height:'72px',borderRadius:'18px',objectFit:'cover',border:'2px solid rgba(234,88,12,.3)'}}/>
+                    <div style={{position:'absolute',bottom:'-4px',right:'-4px',width:'20px',height:'20px',borderRadius:'50%',background:'#4ade80',border:'2px solid #020617'}}/>
+                </div>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'4px'}}>
+                    {editing ? (
+                        <input value={nameInput} onChange={e => setNameInput(e.target.value)}
+                            style={{background:'rgba(2,6,23,.7)',border:'1px solid #ea580c',borderRadius:'10px',padding:'6px 12px',fontSize:'16px',fontFamily:'Syne,sans-serif',fontWeight:800,color:'white',textAlign:'center'}}/>
+                    ) : (
+                        <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'20px',color:'white'}}>{profile.displayName}</h2>
+                    )}
+                    {editing ? (
+                        <button onClick={saveProfile} disabled={saving} style={{padding:'6px',background:'#ea580c',borderRadius:'8px',border:'none',cursor:'pointer',display:'flex'}}><Icon name="check" size={14} className="text-white"/></button>
+                    ) : (
+                        <button onClick={() => setEditing(true)} style={{padding:'6px',background:'rgba(30,41,59,.8)',borderRadius:'8px',border:'1px solid #1e293b',cursor:'pointer',display:'flex',color:'#64748b'}}><Icon name="edit" size={14}/></button>
+                    )}
+                </div>
+                <p style={{color:'#64748b',fontSize:'11px'}}>{user.email}</p>
+
+                {/* ID */}
+                <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginTop:'12px',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'12px',padding:'8px 12px'}}>
+                    <p style={{fontFamily:'monospace',fontSize:'10px',color:'#64748b',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1,textAlign:'left'}}>{user.uid}</p>
+                    <button onClick={copyId} style={{padding:'4px',background:'transparent',border:'none',cursor:'pointer',color:copied?'#4ade80':'#64748b',display:'flex',flexShrink:0}}>
+                        {copied ? <Icon name="check" size={14}/> : <Icon name="copy" size={14}/>}
+                    </button>
+                </div>
+                <p style={{fontSize:'9px',color:'#475569',marginTop:'4px'}}>Partagez votre ID pour être défié</p>
+            </div>
+
+            {/* Stats */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'8px',marginBottom:'16px'}}>
+                {[
+                    { label:'Total défis', value: myStats.total, icon:'target', color:'#94a3b8' },
+                    { label:'Victoires', value: myStats.wins, icon:'trophy', color:'#f97316' },
+                    { label:'Défaites', value: myStats.losses, icon:'zap', color:'#f87171' },
+                    { label:'En cours', value: myStats.active, icon:'flame', color:'#60a5fa' },
+                ].map(s => (
+                    <div key={s.label} className="stat-card">
+                        <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px'}}>
+                            <Icon name={s.icon} size={14} style={{color:s.color}}/>
+                            <p style={{color:'#64748b',fontSize:'9px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.08em'}}>{s.label}</p>
+                        </div>
+                        <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'28px',color:s.color}}>{s.value}</p>
+                    </div>
+                ))}
+            </div>
+
+            {/* Win rate */}
+            {myStats.total > 0 && (
+                <div style={{background:'rgba(15,23,42,.9)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'18px',padding:'16px',display:'flex',alignItems:'center',gap:'16px',marginBottom:'16px'}}>
+                    <div style={{position:'relative',width:'64px',height:'64px',flexShrink:0}}>
+                        <svg viewBox="0 0 64 64" width="64" height="64" className="ring-svg">
+                            <circle cx="32" cy="32" r="26" className="ring-track"/>
+                            <circle cx="32" cy="32" r="26" className="ring-fill"
+                                style={{'--ring-dash':'163.4','--ring-offset':163.4*(1 - myStats.wins/Math.max(myStats.total-0,1)),stroke:'#f97316'}}/>
+                        </svg>
+                        <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',color:'#f97316'}}>
+                            {Math.round((myStats.wins/Math.max(myStats.total,1))*100)}%
+                        </div>
+                    </div>
+                    <div>
+                        <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'14px',color:'white'}}>Taux de victoire</p>
+                        <p style={{color:'#64748b',fontSize:'11px',marginTop:'2px'}}>{myStats.wins} victoires sur {myStats.total} défis</p>
+                    </div>
+                </div>
+            )}
+
+            <button onClick={() => auth.signOut()}
+                style={{width:'100%',padding:'14px',borderRadius:'14px',background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',color:'#f87171',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
+                <Icon name="logout" size={14}/>Déconnexion
+            </button>
+        </div>
+    );
+};
+
+// ── MAIN APP ─────────────────────────────────────────────────────────────
+function App() {
+    const [user, setUser] = useState(null);
+    const [profile, setProfile] = useState({ displayName:'', photoURL:'' });
+    const [loading, setLoading] = useState(true);
+    const [tab, setTab] = useState('home');
+    const [challenges, setChallenges] = useState([]);
+    const [friends, setFriends] = useState([]);
+    const [friendProfiles, setFriendProfiles] = useState({});
+    const [showCreate, setShowCreate] = useState(false);
+    const [updateTarget, setUpdateTarget] = useState(null);
+    const [filter, setFilter] = useState('all'); // all | active | pending | completed
+
+    // Auth
+    useEffect(() => {
+        return auth.onAuthStateChanged(async (u) => {
+            if (u) {
+                setUser(u);
+                const ref = db.collection('artifacts').doc(ONYX_APP_ID).collection('public').doc('data').collection('profiles').doc(u.uid);
+                const unsub = ref.onSnapshot(doc => {
+                    if (doc.exists) setProfile(doc.data());
+                    else {
+                        const np = { uid: u.uid, displayName: u.email.split('@')[0], photoURL: getAvatar(u.email.split('@')[0]), createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+                        ref.set(np);
+                        setProfile(np);
+                    }
+                });
+                return unsub;
+            } else setUser(null);
+            setLoading(false);
+        });
+    }, []);
+
+    // Friends from ONYX
+    useEffect(() => {
+        if (!user) return;
+        const unsub = db.collection('artifacts').doc(ONYX_APP_ID).collection('users').doc(user.uid).collection('contacts').doc('list')
+            .onSnapshot(doc => { if (doc.exists) setFriends(doc.data().friends||[]); else setFriends([]); });
+        return unsub;
+    }, [user]);
+
+    // Friend profiles
+    useEffect(() => {
+        if (!user || friends.length === 0) return;
+        const unsubs = friends.map(f =>
+            db.collection('artifacts').doc(ONYX_APP_ID).collection('public').doc('data').collection('profiles').doc(f.uid)
+                .onSnapshot(doc => { if (doc.exists) setFriendProfiles(p => ({...p,[f.uid]:doc.data()})); })
+        );
+        setLoading(false);
+        return () => unsubs.forEach(u => u());
+    }, [friends, user]);
+
+    // Challenges
+    useEffect(() => {
+        if (!user) return;
+        const unsub = db.collection(APEX_APP_ID)
+            .where('createdBy', '==', user.uid)
+            .onSnapshot(snap => {
+                const mine = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                setChallenges(prev => {
+                    const others = prev.filter(c => c.createdBy !== user.uid);
+                    return [...mine, ...others].sort((a,b) => {
+                        const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                        const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                        return tb - ta;
+                    });
+                });
+            });
+        const unsub2 = db.collection(APEX_APP_ID)
+            .where('challengedUid', '==', user.uid)
+            .onSnapshot(snap => {
+                const theirs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                setChallenges(prev => {
+                    const mine = prev.filter(c => c.challengedUid !== user.uid);
+                    return [...mine, ...theirs].sort((a,b) => {
+                        const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                        const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                        return tb - ta;
+                    });
+                });
+            });
+        setLoading(false);
+        return () => { unsub(); unsub2(); };
+    }, [user]);
+
+    const acceptChallenge = async (id) => {
+        await db.collection(APEX_APP_ID).doc(id).update({ status: 'active', accepted: true });
+    };
+    const declineChallenge = async (id) => {
+        await db.collection(APEX_APP_ID).doc(id).update({ status: 'declined' });
+    };
+
+    const filteredChallenges = useMemo(() => {
+        if (filter === 'all') return challenges.filter(c => c.status !== 'declined');
+        if (filter === 'active') return challenges.filter(c => c.status === 'active');
+        if (filter === 'pending') return challenges.filter(c => c.status === 'pending');
+        if (filter === 'completed') return challenges.filter(c => c.status === 'completed');
+        return challenges;
+    }, [challenges, filter]);
+
+    const pendingCount = challenges.filter(c => c.status === 'pending' && c.challengedUid === user?.uid).length;
+    const activeCount = challenges.filter(c => c.status === 'active').length;
+
+    if (loading) return (
+        <div style={{height:'100dvh',display:'flex',alignItems:'center',justifyContent:'center',background:'#020617'}}>
+            <div style={{width:'40px',height:'40px',border:'3px solid rgba(234,88,12,.3)',borderTopColor:'#f97316',borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
+        </div>
+    );
+    if (!user) return <AuthScreen/>;
+
+    return (
+        <div style={{height:'100dvh',display:'flex',flexDirection:'column',overflow:'hidden',background:'#020617'}}>
+            {/* HEADER */}
+            <header style={{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',paddingTop:'calc(12px + env(safe-area-inset-top))',borderBottom:'1px solid #0f172a',background:'rgba(2,6,23,.95)',backdropFilter:'blur(16px)'}}>
+                <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+                    <div style={{width:'34px',height:'34px',background:'#0f172a',borderRadius:'10px',border:'1px solid rgba(234,88,12,.35)',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                        <LOGO/>
+                    </div>
+                    <div>
+                        <h1 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',letterSpacing:'.12em',textTransform:'uppercase',color:'white',lineHeight:1}}>APEX</h1>
+                        <p style={{fontSize:'8px',color:'#ea580c',fontWeight:700,letterSpacing:'.18em',textTransform:'uppercase'}}>Défis Sportifs</p>
+                    </div>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                    {pendingCount > 0 && (
+                        <button onClick={() => { setTab('home'); setFilter('pending'); }} style={{position:'relative',padding:'8px',background:'rgba(234,179,8,.1)',borderRadius:'10px',border:'1px solid rgba(234,179,8,.25)',cursor:'pointer',color:'#facc15',display:'flex'}}>
+                            <Icon name="bell" size={16}/>
+                            <span style={{position:'absolute',top:'-4px',right:'-4px',width:'16px',height:'16px',background:'#f97316',borderRadius:'50%',fontSize:'9px',fontWeight:800,color:'white',display:'flex',alignItems:'center',justifyContent:'center'}}>{pendingCount}</span>
+                        </button>
+                    )}
+                    <button onClick={() => setShowCreate(true)}
+                        style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',borderRadius:'12px',border:'none',cursor:'pointer',boxShadow:'0 4px 12px rgba(234,88,12,.3)'}}>
+                        <Icon name="plus" size={14} className="text-white"/>
+                        <span style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',color:'white',letterSpacing:'.1em',textTransform:'uppercase'}}>Défi</span>
+                    </button>
+                </div>
+            </header>
+
+            {/* CONTENT */}
+            <div className="scroll-area custom-scroll" style={{flex:1,overflow:'hidden auto',padding:'16px 16px 8px'}}>
+                {tab === 'home' && (
+                    <div className="fade-in">
+                        {/* Quick stats */}
+                        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'8px',marginBottom:'16px'}}>
+                            {[
+                                { label:'Actifs', value: activeCount, icon:'flame', color:'#f97316' },
+                                { label:'Victoires', value: challenges.filter(c=>c.status==='completed'&&c.winner===user.uid).length, icon:'trophy', color:'#facc15' },
+                                { label:'Total', value: challenges.filter(c=>c.status!=='declined').length, icon:'target', color:'#60a5fa' },
+                            ].map(s => (
+                                <div key={s.label} style={{background:'rgba(15,23,42,.9)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'14px',padding:'12px',textAlign:'center'}}>
+                                    <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'22px',color:s.color}}>{s.value}</p>
+                                    <p style={{fontSize:'9px',color:'#64748b',fontWeight:700,textTransform:'uppercase',letterSpacing:'.08em',marginTop:'2px'}}>{s.label}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Filters */}
+                        <div style={{display:'flex',gap:'6px',marginBottom:'16px',overflowX:'auto',paddingBottom:'4px'}}>
+                            {[
+                                {id:'all', label:'Tous'},
+                                {id:'pending', label:'En attente', count: challenges.filter(c=>c.status==='pending').length},
+                                {id:'active', label:'En cours'},
+                                {id:'completed', label:'Terminés'},
+                            ].map(f => (
+                                <button key={f.id} onClick={() => setFilter(f.id)}
+                                    style={{flexShrink:0,display:'flex',alignItems:'center',gap:'5px',padding:'7px 14px',borderRadius:'99px',border:`1px solid ${filter===f.id?'rgba(234,88,12,.5)':'rgba(30,41,59,.8)'}`,background:filter===f.id?'rgba(234,88,12,.1)':'rgba(15,23,42,.8)',cursor:'pointer',whiteSpace:'nowrap'}}>
+                                    <span style={{fontSize:'10px',fontWeight:700,color:filter===f.id?'#f97316':'#64748b',letterSpacing:'.06em'}}>{f.label}</span>
+                                    {f.count > 0 && <span style={{width:'16px',height:'16px',borderRadius:'50%',background:'#ea580c',fontSize:'9px',fontWeight:800,color:'white',display:'flex',alignItems:'center',justifyContent:'center'}}>{f.count}</span>}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Challenges */}
+                        {filteredChallenges.length === 0 ? (
+                            <div style={{textAlign:'center',padding:'48px 16px'}}>
+                                <div style={{fontSize:'48px',marginBottom:'12px'}} className="emoji-native">⚡</div>
+                                <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginBottom:'8px'}}>Aucun défi ici</h3>
+                                <p style={{color:'#64748b',fontSize:'12px',marginBottom:'20px'}}>Lancez votre premier défi à un ami !</p>
+                                <button onClick={() => setShowCreate(true)}
+                                    style={{padding:'12px 24px',background:'linear-gradient(135deg,#ea580c,#c2410c)',borderRadius:'14px',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>
+                                    + Créer un défi
+                                </button>
+                            </div>
+                        ) : (
+                            filteredChallenges.map(c => (
+                                <ChallengeCard key={c.id} challenge={c} user={{uid:user.uid,photoURL:profile.photoURL,displayName:profile.displayName}}
+                                    onUpdate={setUpdateTarget}
+                                    onAccept={acceptChallenge}
+                                    onDecline={declineChallenge}/>
+                            ))
+                        )}
+                    </div>
+                )}
+
+                {tab === 'leaderboard' && (
+                    <div className="fade-in">
+                        <LeaderboardTab user={{uid:user.uid,...profile}} friends={friends} friendProfiles={friendProfiles} challenges={challenges}/>
+                    </div>
+                )}
+
+                {tab === 'profile' && (
+                    <div className="fade-in">
+                        <ProfileTab user={user} profile={profile} setProfile={setProfile} challenges={challenges}/>
+                    </div>
+                )}
+            </div>
+
+            {/* NAV BAR */}
+            <nav style={{flexShrink:0,borderTop:'1px solid #0f172a',background:'rgba(2,6,23,.98)',paddingBottom:'env(safe-area-inset-bottom)',display:'flex',justifyContent:'space-around',padding:'6px 8px',paddingBottom:'calc(6px + env(safe-area-inset-bottom))'}}>
+                {[
+                    { id:'home', icon:'home', label:'Défis' },
+                    { id:'leaderboard', icon:'trophy', label:'Classement' },
+                    { id:'profile', icon:'user', label:'Profil' },
+                ].map(n => (
+                    <button key={n.id} onClick={() => setTab(n.id)} className={`nav-item ${tab===n.id?'active':''}`}>
+                        <Icon name={n.icon} size={20} className={tab===n.id?'text-orange-500':'text-slate-500'}/>
+                        <span style={{fontSize:'9px',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:tab===n.id?'#f97316':'#475569'}}>{n.label}</span>
+                    </button>
+                ))}
+            </nav>
+
+            {/* MODALS */}
+            {showCreate && (
+                <CreateChallengeModal user={user} profile={profile} friends={friends} friendProfiles={friendProfiles} onClose={() => setShowCreate(false)}/>
+            )}
+            {updateTarget && (
+                <UpdateProgressModal challenge={updateTarget} user={user} onClose={() => setUpdateTarget(null)}/>
+            )}
+        </div>
+    );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
