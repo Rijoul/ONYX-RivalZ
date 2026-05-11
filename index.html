@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>APEX · Défis Sportifs</title>
+    <title>ONYX RivalZ · Défis Sportifs</title>
     <!-- ══════════════════════════════════════════════════════════════════
          RGPD 2026 — CHARGEMENT CONDITIONNEL
          Les scripts Firebase ne sont chargés QU'après consentement explicite.
@@ -296,10 +296,15 @@ const AgeGate = ({ onConfirm, onDeny }) => {
     return (
         <div className="age-gate">
             <div className="fade-in" style={{width:'100%',maxWidth:'380px',textAlign:'center'}}>
-                <div style={{fontSize:'48px',marginBottom:'16px'}} className="emoji-native">🔞</div>
+                <div style={{marginBottom:'16px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    <div style={{background:'#1e293b',border:'2px solid #f97316',borderRadius:'14px',padding:'6px 18px',display:'inline-flex',alignItems:'center',gap:'8px'}}>
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#f97316" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                        <span style={{fontFamily:"'Syne',sans-serif",fontWeight:900,fontSize:'30px',color:'#f97316',letterSpacing:'-0.03em',lineHeight:1}}>-16</span>
+                    </div>
+                </div>
                 <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'20px',color:'white',marginBottom:'8px',letterSpacing:'.08em'}}>Vérification d'âge</h2>
                 <p style={{color:'#94a3b8',fontSize:'12px',lineHeight:1.7,marginBottom:'24px'}}>
-                    Conformément au RGPD (art. 8), APEX est réservé aux personnes
+                    Conformément au RGPD (art. 8), ONYX RivalZ est réservé aux personnes
                     âgées d'au moins <strong style={{color:'white'}}>16 ans</strong> dans l'Union Européenne.
                 </p>
 
@@ -310,7 +315,7 @@ const AgeGate = ({ onConfirm, onDeny }) => {
                             {checked && <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>}
                         </div>
                         <p style={{fontSize:'12px',color:'#e2e8f0',lineHeight:1.65}}>
-                            Je certifie sur l'honneur avoir au moins <strong>16 ans</strong> (ou 13 ans avec accord parental si hors UE) et avoir lu et accepté les conditions d'utilisation d'APEX.
+                            Je certifie sur l'honneur avoir au moins <strong>16 ans</strong> (ou 13 ans avec accord parental si hors UE) et avoir lu et accepté les conditions d'utilisation d'ONYX RivalZ.
                         </p>
                     </button>
                 </div>
@@ -354,7 +359,7 @@ const ConsentBanner = ({ onAccept, onRefuse, onCustomize, onPrivacy, onTerms }) 
                         Vos données personnelles
                     </h2>
                     <p style={{fontSize:'11px',color:'#94a3b8',lineHeight:1.65}}>
-                        Avant d'utiliser APEX, vous devez nous autoriser à traiter certaines de vos données.
+                        Avant d'utiliser ONYX RivalZ, vous devez nous autoriser à traiter certaines de vos données.
                         Vous pouvez choisir librement et modifier vos préférences à tout moment.
                     </p>
                 </div>
@@ -417,9 +422,6 @@ const ConsentBanner = ({ onAccept, onRefuse, onCustomize, onPrivacy, onTerms }) 
 
 // ══════════════════════════════════════════════════════════════════════════
 //  RGPD 2026 — PERSONNALISATION GRANULAIRE
-//  Chaque catégorie est clairement décrite, la case "Essentiel" est
-//  verrouillée et non interactive. Aucune case n'est précochée pour
-//  les options optionnelles.
 // ══════════════════════════════════════════════════════════════════════════
 const ConsentCustomizer = ({ onSave, onClose }) => {
     const [prefs, setPrefs] = useState({ essential: true, analytics: false, functional: false });
@@ -494,13 +496,12 @@ const ConsentCustomizer = ({ onSave, onClose }) => {
 
 // ══════════════════════════════════════════════════════════════════════════
 //  RGPD 2026 — BANDEAU COOKIE PERSISTANT (post-consentement)
-//  Rappel discret que les préférences peuvent être modifiées.
 // ══════════════════════════════════════════════════════════════════════════
 const CookieStrip = ({ onManage }) => (
     <div style={{position:'fixed',bottom:0,left:0,right:0,zIndex:500,background:'rgba(15,23,42,.95)',borderTop:'1px solid rgba(30,41,59,.8)',padding:'8px 16px',paddingBottom:'calc(8px + env(safe-area-inset-bottom))',display:'flex',alignItems:'center',gap:'12px',backdropFilter:'blur(10px)'}}>
         <Icon name="shield" size={14} style={{color:'#64748b',flexShrink:0}}/>
         <p style={{fontSize:'9px',color:'#475569',flex:1,lineHeight:1.5}}>
-            APEX utilise des données essentielles pour fonctionner. <button onClick={onManage} style={{color:'#f97316',background:'none',border:'none',cursor:'pointer',fontSize:'9px',fontWeight:700,padding:0,textDecoration:'underline'}}>Gérer mes préférences</button>
+            ONYX RivalZ utilise des données essentielles pour fonctionner. <button onClick={onManage} style={{color:'#f97316',background:'none',border:'none',cursor:'pointer',fontSize:'9px',fontWeight:700,padding:0,textDecoration:'underline'}}>Gérer mes préférences</button>
         </p>
         <button onClick={onManage} style={{fontSize:'8px',color:'#64748b',background:'rgba(30,41,59,.8)',border:'1px solid #1e293b',borderRadius:'8px',padding:'5px 8px',cursor:'pointer',fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase',flexShrink:0,whiteSpace:'nowrap'}}>
             Préférences
@@ -524,10 +525,10 @@ const PrivacyPage = ({ onClose }) => (
             <p className="legal-p" style={{color:'#475569',fontSize:'10px',marginBottom:'24px'}}>Conforme RGPD (UE) 2016/679 · Digital Services Act 2024 · Lignes directrices CNIL 2026</p>
 
             <h2 className="legal-h2">1. Identité du responsable du traitement</h2>
-            <p className="legal-p"><strong style={{color:'#e2e8f0'}}>APEX Défis Sportifs</strong> est une application web indépendante développée par Rijoul (développeur indépendant, France). Pour exercer vos droits ou poser toute question relative à vos données : contactez le responsable via l'onglet Profil → Signalement, ou via l'interface de messagerie de l'application.</p>
+            <p className="legal-p"><strong style={{color:'#e2e8f0'}}>ONYX RivalZ</strong> est une application web indépendante développée par Rijoul (développeur indépendant, France). Pour exercer vos droits ou poser toute question relative à vos données : contactez le responsable via l'onglet Profil → Signalement, ou via l'interface de messagerie de l'application.</p>
 
             <h2 className="legal-h2">2. Principe de minimisation des données</h2>
-            <p className="legal-p">Conformément à l'article 5§1c du RGPD, APEX applique strictement le principe de minimisation : seules les données strictement nécessaires à chaque finalité déclarée sont collectées. Aucune donnée n'est collectée à titre préventif ou spéculatif.</p>
+            <p className="legal-p">Conformément à l'article 5§1c du RGPD, ONYX RivalZ applique strictement le principe de minimisation : seules les données strictement nécessaires à chaque finalité déclarée sont collectées. Aucune donnée n'est collectée à titre préventif ou spéculatif.</p>
 
             <h2 className="legal-h2">3. Données personnelles collectées</h2>
             <p className="legal-p">Les catégories de données traitées et leur base légale respective :</p>
@@ -541,10 +542,10 @@ const PrivacyPage = ({ onClose }) => (
                 <li><strong style={{color:'#e2e8f0'}}>Déclaration d'âge</strong> — confirmation que l'utilisateur a 16 ans ou plus · base : obligation légale (art. 6§1c, art. 8 RGPD)</li>
                 <li><strong style={{color:'#e2e8f0'}}>Préférences de consentement</strong> — choix RGPD stockés en localStorage · base : consentement</li>
             </ul>
-            <p className="legal-p">APEX ne collecte <strong style={{color:'#e2e8f0'}}>aucune</strong> donnée de localisation GPS, aucune donnée de santé au sens clinique, aucune donnée biométrique, aucune donnée bancaire, et n'utilise aucun traceur publicitaire ou de profilage comportemental.</p>
+            <p className="legal-p">ONYX RivalZ ne collecte <strong style={{color:'#e2e8f0'}}>aucune</strong> donnée de localisation GPS, aucune donnée de santé au sens clinique, aucune donnée biométrique, aucune donnée bancaire, et n'utilise aucun traceur publicitaire ou de profilage comportemental.</p>
 
             <h2 className="legal-h2">4. Chargement conditionnel des services tiers</h2>
-            <p className="legal-p">Depuis la version 2.0 (mai 2026), les scripts Firebase (authentification et base de données) ne sont chargés dans votre navigateur <strong style={{color:'#e2e8f0'}}>qu'après votre consentement explicite</strong>. Avant ce consentement, aucune connexion réseau vers les serveurs Google/Firebase n'est initiée par APEX.</p>
+            <p className="legal-p">Depuis la version 2.0 (mai 2026), les scripts Firebase (authentification et base de données) ne sont chargés dans votre navigateur <strong style={{color:'#e2e8f0'}}>qu'après votre consentement explicite</strong>. Avant ce consentement, aucune connexion réseau vers les serveurs Google/Firebase n'est initiée par ONYX RivalZ.</p>
 
             <h2 className="legal-h2">5. Finalités du traitement</h2>
             <ul className="legal-ul">
@@ -565,7 +566,7 @@ const PrivacyPage = ({ onClose }) => (
             </ul>
 
             <h2 className="legal-h2">7. Sous-traitants et transferts de données</h2>
-            <p className="legal-p">APEX utilise <strong style={{color:'#e2e8f0'}}>Firebase / Google LLC</strong> comme sous-traitant unique :</p>
+            <p className="legal-p">ONYX RivalZ utilise <strong style={{color:'#e2e8f0'}}>Firebase / Google LLC</strong> comme sous-traitant unique :</p>
             <ul className="legal-ul">
                 <li><strong style={{color:'#e2e8f0'}}>Firebase Authentication</strong> — gestion des identités (chargé après consentement)</li>
                 <li><strong style={{color:'#e2e8f0'}}>Cloud Firestore</strong> — base de données en région Europe de l'Ouest (europe-west)</li>
@@ -573,7 +574,7 @@ const PrivacyPage = ({ onClose }) => (
                 <li>Conformité vérifiée avec le cadre EU-US Data Privacy Framework (2023)</li>
                 <li>Aucune autre entité tierce ne reçoit vos données personnelles</li>
             </ul>
-            <p className="legal-p">Aucune donnée personnelle n'est vendue, revendue, louée ou partagée à des fins commerciales ou publicitaires. APEX est 100% sans publicité.</p>
+            <p className="legal-p">Aucune donnée personnelle n'est vendue, revendue, louée ou partagée à des fins commerciales ou publicitaires. ONYX RivalZ est 100% sans publicité.</p>
 
             <h2 className="legal-h2">8. Sécurité des données</h2>
             <ul className="legal-ul">
@@ -599,10 +600,10 @@ const PrivacyPage = ({ onClose }) => (
             <p className="legal-p">Vous pouvez également introduire une réclamation auprès de la <a href="https://www.cnil.fr" target="_blank" className="legal-link">CNIL</a> — 3 Place de Fontenoy, 75007 Paris — ou de l'autorité de contrôle de votre État membre de résidence.</p>
 
             <h2 className="legal-h2">10. Cookies et stockage local</h2>
-            <p className="legal-p">APEX utilise le <strong style={{color:'#e2e8f0'}}>localStorage</strong> uniquement pour stocker vos préférences de consentement RGPD (clé : <code style={{color:'#f97316',fontSize:'10px'}}>apex_consent_v2</code>). Ce stockage n'est <strong style={{color:'#e2e8f0'}}>activé qu'après votre consentement</strong>. Aucun cookie de traçage, publicitaire ou analytique n'est utilisé. Firebase peut utiliser des cookies techniques strictement nécessaires à l'authentification, chargés uniquement après votre consentement.</p>
+            <p className="legal-p">ONYX RivalZ utilise le <strong style={{color:'#e2e8f0'}}>localStorage</strong> uniquement pour stocker vos préférences de consentement RGPD (clé : <code style={{color:'#f97316',fontSize:'10px'}}>apex_consent_v2</code>). Ce stockage n'est <strong style={{color:'#e2e8f0'}}>activé qu'après votre consentement</strong>. Aucun cookie de traçage, publicitaire ou analytique n'est utilisé. Firebase peut utiliser des cookies techniques strictement nécessaires à l'authentification, chargés uniquement après votre consentement.</p>
 
             <h2 className="legal-h2">11. Protection des mineurs</h2>
-            <p className="legal-p">APEX est destiné aux personnes âgées d'au moins <strong style={{color:'#e2e8f0'}}>16 ans</strong> dans l'Union Européenne (art. 8 RGPD). Une vérification d'âge par déclaration sur l'honneur est requise avant tout accès. Si vous avez connaissance qu'un mineur a créé un compte, contactez-nous pour suppression immédiate.</p>
+            <p className="legal-p">ONYX RivalZ est destiné aux personnes âgées d'au moins <strong style={{color:'#e2e8f0'}}>16 ans</strong> dans l'Union Européenne (art. 8 RGPD). Une vérification d'âge par déclaration sur l'honneur est requise avant tout accès. Si vous avez connaissance qu'un mineur a créé un compte, contactez-nous pour suppression immédiate.</p>
 
             <h2 className="legal-h2">12. Signalement d'abus</h2>
             <p className="legal-p">Pour signaler tout contenu illicite ou comportement abusif, utilisez le bouton "Signaler un abus" dans l'onglet Profil. Pour tout contenu impliquant des mineurs, signalez également sur <a href="https://www.internet-signalement.gouv.fr" target="_blank" className="legal-link">internet-signalement.gouv.fr</a>.</p>
@@ -630,8 +631,8 @@ const TermsPage = ({ onClose }) => (
             <p className="legal-p" style={{color:'#475569',fontSize:'10px',marginBottom:'24px'}}>Dernière mise à jour : <strong style={{color:'#f97316'}}>mai 2026</strong> · Version 2.0</p>
 
             <h2 className="legal-h2">1. Présentation du service</h2>
-            <p className="legal-p"><strong style={{color:'#e2e8f0'}}>APEX Défis Sportifs</strong> est une application web permettant à des utilisateurs de se lancer mutuellement des défis sportifs. Le service est développé et maintenu par Rijoul, développeur indépendant, France.</p>
-            <p className="legal-p">En utilisant APEX, vous acceptez sans réserve les présentes CGU. Si vous n'acceptez pas ces conditions, vous devez cesser d'utiliser le service.</p>
+            <p className="legal-p"><strong style={{color:'#e2e8f0'}}>ONYX RivalZ</strong> est une application web permettant à des utilisateurs de se lancer mutuellement des défis sportifs. Le service est développé et maintenu par Rijoul, développeur indépendant, France.</p>
+            <p className="legal-p">En utilisant ONYX RivalZ, vous acceptez sans réserve les présentes CGU. Si vous n'acceptez pas ces conditions, vous devez cesser d'utiliser le service.</p>
 
             <h2 className="legal-h2">2. Accès et âge minimum</h2>
             <p className="legal-p">L'accès est réservé aux personnes physiques capables de contracter :</p>
@@ -667,7 +668,7 @@ const TermsPage = ({ onClose }) => (
 
             <h2 className="legal-h2">8. Disponibilité et limitation de responsabilité</h2>
             <p className="legal-p">Le service est fourni tel quel, sans garantie de disponibilité continue. Rijoul n'est pas responsable des blessures survenant lors de défis, des dommages indirects, ni des actions d'utilisateurs tiers.</p>
-            <p className="legal-p"><strong style={{color:'#e2e8f0'}}>Important :</strong> Consultez un professionnel de santé avant tout programme sportif intense. APEX n'est pas un service médical.</p>
+            <p className="legal-p"><strong style={{color:'#e2e8f0'}}>Important :</strong> Consultez un professionnel de santé avant tout programme sportif intense. ONYX RivalZ n'est pas un service médical.</p>
 
             <h2 className="legal-h2">9. Signalement d'abus (DSA — Digital Services Act)</h2>
             <p className="legal-p">Conformément au Digital Services Act (règlement UE 2022/2065), tout utilisateur peut signaler un contenu illicite via le bouton "Signaler un abus" dans l'onglet Profil. Rijoul traitera les signalements dans un délai raisonnable et notifiera la décision prise. Pour les contenus impliquant des mineurs : <a href="https://www.internet-signalement.gouv.fr" target="_blank" className="legal-link">internet-signalement.gouv.fr</a>.</p>
@@ -685,7 +686,6 @@ const TermsPage = ({ onClose }) => (
 
 // ══════════════════════════════════════════════════════════════════════════
 //  RGPD 2026 — EXERCICE DES DROITS (depuis Profil)
-//  Export réel des données, suppression effective, retrait de consentement
 // ══════════════════════════════════════════════════════════════════════════
 const RightsModal = ({ user, onClose, onDeleteAccount }) => {
     const [loading, setLoading] = useState(false);
@@ -721,7 +721,7 @@ const RightsModal = ({ user, onClose, onDeleteAccount }) => {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `apex-mes-donnees-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `onyx-rivalz-mes-donnees-${new Date().toISOString().split('T')[0]}.json`;
             document.body.appendChild(a); a.click(); document.body.removeChild(a);
             URL.revokeObjectURL(url);
             setExported(true);
@@ -863,7 +863,7 @@ const AuthScreen = ({ onShowPrivacy, onShowTerms }) => {
                     <div className="auth-logo auth-logo-glow" style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:'80px',height:'80px',background:'#0f172a',borderRadius:'24px',marginBottom:'20px',border:'1px solid rgba(234,88,12,.4)',overflow:'hidden'}}>
                         <LOGO/>
                     </div>
-                    <h1 className="shimmer-text" style={{fontFamily:'Syne,sans-serif',fontSize:'28px',fontWeight:800,letterSpacing:'.15em',marginBottom:'6px',textTransform:'uppercase'}}>APEX</h1>
+                    <h1 className="shimmer-text" style={{fontFamily:'Syne,sans-serif',fontSize:'22px',fontWeight:800,letterSpacing:'.12em',marginBottom:'6px',textTransform:'uppercase'}}>ONYX RivalZ</h1>
                     <p style={{color:'#ea580c',fontSize:'10px',fontWeight:700,letterSpacing:'.2em',textTransform:'uppercase'}}>Défis Sportifs</p>
                 </div>
 
@@ -1106,11 +1106,11 @@ const CreateChallengeModal = ({ user, profile, friends, friendProfiles, onClose 
                                                 const selected = form.challengedUid===f.uid;
                                                 return (
                                                     <button key={f.uid} onClick={()=>setForm(frm=>({...frm,challengedUid:f.uid}))}
-                                                        style={{display:'flex',alignItems:'center',gap:'12px',padding:'12px',borderRadius:'14px',border:`1px solid ${selected?'#ea580c':'#1e293b'}`,background:selected?'rgba(234,88,12,.1)':'rgba(15,23,42,.8)',cursor:'pointer',textAlign:'left',transition:'all .15s'}}>
+                                                        style={{display:'flex',alignItems:'center',gap:'12px',padding:'12px',borderRadius:'14px',border:`1px solid ${selected?'#ea580c':'#1e293b'}`,background:selected?'rgba(234,88,12,.1)':'rgba(15,23,42,.8)',cursor:'pointer',textAlign:'left',transition:'all .15px'}}>
                                                         <img src={fd.photoURL||getAvatar(fd.displayName)} style={{width:'40px',height:'40px',borderRadius:'12px',objectFit:'cover'}}/>
                                                         <div style={{flex:1}}>
                                                             <p style={{fontWeight:700,fontSize:'13px',color:'white'}}>{fd.displayName||'Contact'}</p>
-                                                            <p style={{fontSize:'9px',color:'#64748b',textTransform:'uppercase',letterSpacing:'.06em'}}>Membre APEX</p>
+                                                            <p style={{fontSize:'9px',color:'#64748b',textTransform:'uppercase',letterSpacing:'.06em'}}>Membre ONYX RivalZ</p>
                                                         </div>
                                                         {selected && <div style={{width:'20px',height:'20px',borderRadius:'50%',background:'#ea580c',display:'flex',alignItems:'center',justifyContent:'center'}}><Icon name="check" size={12}/></div>}
                                                     </button>
@@ -1486,7 +1486,7 @@ const ProfileTab = ({ user, profile, setProfile, challenges, onShowRights, onSho
 // ══════════════════════════════════════════════════════════════════════════
 function App() {
     // ── États RGPD ──
-    const [consentState, setConsentState] = useState(() => loadConsent()); // null = pas encore consenti
+    const [consentState, setConsentState] = useState(() => loadConsent());
     const [showConsentBanner, setShowConsentBanner] = useState(false);
     const [showCustomizer, setShowCustomizer] = useState(false);
     const [showPrivacy, setShowPrivacy] = useState(false);
@@ -1522,7 +1522,6 @@ function App() {
             setLoading(false);
             return;
         }
-        // Consentement acquis → charger Firebase
         loadFirebase().then(() => {
             setFirebaseReady(true);
         }).catch(err => {
@@ -1553,7 +1552,7 @@ function App() {
         return unsub;
     }, [firebaseReady]);
 
-    // ── Friends & challenges (inchangé) ──
+    // ── Friends & challenges ──
     useEffect(() => {
         if (!user||!firebaseReady) return;
         const unsub = db.collection('artifacts').doc(ONYX_APP_ID).collection('users').doc(user.uid).collection('contacts').doc('list')
@@ -1601,7 +1600,6 @@ function App() {
     };
     const handleAgeDeny = () => {
         setShowAgeGate(false);
-        // Afficher un écran de refus mineurs
         setLoading(false);
     };
 
@@ -1611,7 +1609,6 @@ function App() {
         setShowConsentBanner(false);
     };
     const handleRefuseAll = () => {
-        // Refus : données essentielles seulement (nécessaires au fonctionnement)
         const c = saveConsent({functional:false,analytics:false,ageConfirmed:true});
         setConsentState(c);
         setShowConsentBanner(false);
@@ -1645,21 +1642,18 @@ function App() {
     //  RENDUS CONDITIONNELS RGPD
     // ══════════════════════════════════════════════════════════════════
 
-    // Page légales (toujours accessibles)
     if (showPrivacy) return <PrivacyPage onClose={()=>setShowPrivacy(false)}/>;
     if (showTerms) return <TermsPage onClose={()=>setShowTerms(false)}/>;
 
-    // Vérification d'âge (priorité maximale)
     if (showAgeGate) return <AgeGate onConfirm={handleAgeConfirm} onDeny={handleAgeDeny}/>;
 
-    // Écran de refus mineurs
     if (!ageConfirmed && !showAgeGate) return (
         <div style={{height:'100dvh',background:'#020617',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px',textAlign:'center'}}>
             <div className="fade-in">
                 <div style={{fontSize:'48px',marginBottom:'16px'}} className="emoji-native">🔒</div>
                 <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'18px',color:'white',marginBottom:'8px'}}>Accès non autorisé</h2>
                 <p style={{color:'#64748b',fontSize:'12px',lineHeight:1.7,maxWidth:'280px'}}>
-                    APEX est réservé aux personnes âgées de 16 ans ou plus.<br/>
+                    ONYX RivalZ est réservé aux personnes âgées de 16 ans ou plus.<br/>
                     Si vous êtes mineur, veuillez quitter cette application.
                 </p>
                 <button onClick={()=>setShowAgeGate(true)}
@@ -1670,7 +1664,6 @@ function App() {
         </div>
     );
 
-    // Spinner pendant chargement Firebase
     if (loading && consentState && !firebaseReady) return (
         <div style={{height:'100dvh',display:'flex',alignItems:'center',justifyContent:'center',background:'#020617',flexDirection:'column',gap:'16px'}}>
             <div style={{width:'40px',height:'40px',border:'3px solid rgba(234,88,12,.3)',borderTopColor:'#f97316',borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
@@ -1680,7 +1673,6 @@ function App() {
 
     return (
         <>
-            {/* ── Bannière de consentement (modale) ── */}
             {showConsentBanner && !showCustomizer && (
                 <ConsentBanner
                     onAccept={handleAcceptAll}
@@ -1697,7 +1689,6 @@ function App() {
                 />
             )}
 
-            {/* ── Modale droits RGPD ── */}
             {showRights && user && (
                 <RightsModal
                     user={user}
@@ -1706,10 +1697,8 @@ function App() {
                 />
             )}
 
-            {/* ── App principale (accessible après consentement) ── */}
             {consentState && !showConsentBanner && (
                 <div style={{height:'100dvh',display:'flex',flexDirection:'column',overflow:'hidden',background:'#020617',paddingBottom:'env(safe-area-inset-bottom)'}}>
-                    {/* AUTH */}
                     {!user && firebaseReady && (
                         <AuthScreen onShowPrivacy={()=>setShowPrivacy(true)} onShowTerms={()=>setShowTerms(true)}/>
                     )}
@@ -1723,7 +1712,7 @@ function App() {
                                         <LOGO/>
                                     </div>
                                     <div>
-                                        <h1 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',letterSpacing:'.12em',textTransform:'uppercase',color:'white',lineHeight:1}}>APEX</h1>
+                                        <h1 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'14px',letterSpacing:'.1em',textTransform:'uppercase',color:'white',lineHeight:1}}>ONYX RivalZ</h1>
                                         <p style={{fontSize:'8px',color:'#ea580c',fontWeight:700,letterSpacing:'.18em',textTransform:'uppercase'}}>Défis Sportifs</p>
                                     </div>
                                 </div>
@@ -1816,10 +1805,6 @@ function App() {
                                 ))}
                             </nav>
 
-                            {/* Bandeau cookie persistant (discret) */}
-                            {/* <CookieStrip onManage={handleManageConsent}/> */}
-
-                            {/* MODALS */}
                             {showCreate && <CreateChallengeModal user={user} profile={profile} friends={friends} friendProfiles={friendProfiles} onClose={()=>setShowCreate(false)}/>}
                             {updateTarget && <UpdateProgressModal challenge={updateTarget} user={user} onClose={()=>setUpdateTarget(null)}/>}
                         </>
