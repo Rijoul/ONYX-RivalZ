@@ -35,6 +35,7 @@
         @keyframes tabActive { from{width:0} to{width:100%} }
         @keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
         @keyframes ripple { 0%{transform:scale(0);opacity:.4} 100%{transform:scale(2.5);opacity:0} }
+        @keyframes onlinePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(1.3)} }
 
         .auth-card { animation: fadeUp .7s cubic-bezier(.16,1,.3,1) both; }
         .auth-logo { animation: float 4s ease-in-out infinite; }
@@ -126,6 +127,13 @@
         .tab-pill { padding:8px 16px; border-radius:99px; font-family:'Syne',sans-serif; font-weight:700; font-size:10px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:all .2s; border:none; }
         .tab-pill.active { background:rgba(234,88,12,.15); color:#f97316; border:1px solid rgba(234,88,12,.3); }
         .tab-pill.inactive { background:rgba(15,23,42,.8); color:#64748b; border:1px solid rgba(30,41,59,.8); }
+
+        /* Online indicator pulse */
+        .online-dot { animation: onlinePulse 2s ease-in-out infinite; }
+
+        /* Cancel challenge button */
+        .cancel-btn { width:100%; padding:10px; border-radius:12px; background:rgba(100,116,139,.08); border:1px solid rgba(100,116,139,.25); color:#94a3b8; font-family:'Syne',sans-serif; font-weight:700; font-size:10px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all .2s; }
+        .cancel-btn:hover { background:rgba(239,68,68,.08); border-color:rgba(239,68,68,.25); color:#f87171; }
     </style>
 </head>
 <body>
@@ -136,6 +144,10 @@ const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 const CONSENT_KEY = 'apex_consent_v2';
 const CONSENT_VERSION = '2026-05';
+// How many milliseconds before a user is considered "offline"
+const ONLINE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
+// How often we update our own presence
+const PRESENCE_INTERVAL_MS = 60 * 1000; // 60 seconds
 
 function loadConsent() {
     try {
@@ -208,6 +220,22 @@ function initFirebase(resolve, reject) {
 const ONYX_APP_ID = 'onyx-pro-chat';
 const APEX_APP_ID = 'apex-sport-challenges';
 const getAvatar = (name) => `https://ui-avatars.com/api/?name=${encodeURIComponent(name||'User')}&background=ea580c&color=fff&bold=true&rounded=true`;
+
+// ── PRESENCE HELPERS ─────────────────────────────────────────────────────
+function isUserOnline(lastSeenTimestamp) {
+    if (!lastSeenTimestamp) return false;
+    const lastSeen = lastSeenTimestamp.toDate ? lastSeenTimestamp.toDate() : new Date(lastSeenTimestamp);
+    return (Date.now() - lastSeen.getTime()) < ONLINE_THRESHOLD_MS;
+}
+
+async function updatePresence(uid) {
+    if (!uid || !db) return;
+    try {
+        await db.collection('artifacts').doc(ONYX_APP_ID)
+            .collection('public').doc('data').collection('profiles').doc(uid)
+            .update({ lastSeen: window.firebase.firestore.FieldValue.serverTimestamp() });
+    } catch(e) { /* silent fail */ }
+}
 
 const SPORT_ICONS = {
     running:'🏃', cycling:'🚴', swimming:'🏊', pushups:'💪', pullups:'🏋️',
@@ -284,6 +312,7 @@ const Icon = ({ name, size=18, className='' }) => {
         userMinus: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" y1="11" x2="16" y2="11"/></>,
         refresh: <><path d="M21.5 2v6h-6M2.5 22v-6h6"/><path d="M22 12A10 10 0 0 0 3.2 7.2M2 12a10 10 0 0 0 18.8 4.8"/></>,
         search: <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
+        xCircle: <><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></>,
     };
     return (
         <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -305,6 +334,44 @@ const INPUT_STYLE = {
     color:'white',
 };
 
+// ── ONLINE INDICATOR COMPONENT ────────────────────────────────────────────
+const OnlineIndicator = ({ lastSeen, size = 12 }) => {
+    const online = isUserOnline(lastSeen);
+    return (
+        <div style={{
+            position:'absolute',
+            bottom: size === 12 ? '-3px' : '-4px',
+            right: size === 12 ? '-3px' : '-4px',
+            width:`${size}px`,
+            height:`${size}px`,
+            borderRadius:'50%',
+            background: online ? '#4ade80' : '#475569',
+            border:'2px solid #0f172a',
+            ...(online ? {} : {}),
+        }}
+        className={online ? 'online-dot' : ''}
+        title={online ? 'En ligne' : 'Hors ligne'}
+        />
+    );
+};
+
+// Small inline version (for lists)
+const OnlineBadge = ({ lastSeen }) => {
+    const online = isUserOnline(lastSeen);
+    return (
+        <div style={{display:'flex',alignItems:'center',gap:'4px',marginTop:'2px'}}>
+            <div style={{
+                width:'6px',height:'6px',borderRadius:'50%',
+                background: online ? '#4ade80' : '#475569',
+                flexShrink:0,
+            }} className={online ? 'online-dot' : ''}/>
+            <p style={{fontSize:'9px',color: online ? '#4ade80' : '#64748b',fontWeight:700,textTransform:'uppercase',letterSpacing:'.08em'}}>
+                {online ? 'En ligne' : 'Hors ligne'}
+            </p>
+        </div>
+    );
+};
+
 // ── FRIENDS TAB ──────────────────────────────────────────────────────────
 const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfiles }) => {
     const [subTab, setSubTab] = useState('friends');
@@ -317,7 +384,6 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
 
     const friendUids = useMemo(() => friends.map(f => f.uid), [friends]);
 
-    // Load incoming friend requests
     useEffect(() => {
         if (!user) return;
         const unsub = db.collection('apex_friend_requests')
@@ -329,7 +395,6 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
         return unsub;
     }, [user]);
 
-    // Load sent requests
     useEffect(() => {
         if (!user) return;
         const unsub = db.collection('apex_friend_requests')
@@ -341,7 +406,6 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
         return unsub;
     }, [user]);
 
-    // Load discover users (random 5)
     const loadDiscoverUsers = async () => {
         setLoadingDiscover(true);
         try {
@@ -353,7 +417,6 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
                 .map(d => ({ uid: d.id, ...d.data() }))
                 .filter(u => u.uid !== user.uid && !friendUids.includes(u.uid));
 
-            // Shuffle and take 5
             const shuffled = allUsers.sort(() => Math.random() - 0.5).slice(0, 5);
             setDiscoverUsers(shuffled);
         } catch (e) { console.error(e); }
@@ -364,7 +427,6 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
         if (subTab === 'discover') loadDiscoverUsers();
     }, [subTab]);
 
-    // Send friend request
     const sendRequest = async (targetUid) => {
         setActionLoading(prev => ({ ...prev, [targetUid]: true }));
         try {
@@ -379,11 +441,9 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
         setActionLoading(prev => ({ ...prev, [targetUid]: false }));
     };
 
-    // Accept friend request
     const acceptRequest = async (req) => {
         setActionLoading(prev => ({ ...prev, [req.id]: true }));
         try {
-            // Add to both friends lists
             const myListRef = db.collection('artifacts').doc(ONYX_APP_ID)
                 .collection('users').doc(user.uid).collection('contacts').doc('list');
             const theirListRef = db.collection('artifacts').doc(ONYX_APP_ID)
@@ -402,13 +462,11 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
                 await theirListRef.set({ friends: [...theirFriends, { uid: user.uid }] });
             }
 
-            // Mark request as accepted
             await db.collection('apex_friend_requests').doc(req.id).update({ status: 'accepted' });
         } catch (e) { console.error(e); }
         setActionLoading(prev => ({ ...prev, [req.id]: false }));
     };
 
-    // Decline friend request
     const declineRequest = async (reqId) => {
         setActionLoading(prev => ({ ...prev, [reqId]: true }));
         try {
@@ -417,7 +475,6 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
         setActionLoading(prev => ({ ...prev, [reqId]: false }));
     };
 
-    // Remove friend
     const removeFriend = async (friendUid) => {
         setRemovingId(friendUid);
         try {
@@ -445,7 +502,6 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
 
     return (
         <div>
-            {/* Header section */}
             <div style={{background:'rgba(15,23,42,.9)',border:'1px solid rgba(234,88,12,.2)',borderRadius:'20px',padding:'16px 20px',marginBottom:'16px'}}>
                 <div style={{display:'flex',alignItems:'center',gap:'12px'}}>
                     <div style={{width:'44px',height:'44px',borderRadius:'14px',background:'rgba(234,88,12,.12)',border:'1px solid rgba(234,88,12,.25)',display:'flex',alignItems:'center',justifyContent:'center'}}>
@@ -465,7 +521,6 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
                 </div>
             </div>
 
-            {/* Sub-tabs */}
             <div style={{display:'flex',gap:'6px',marginBottom:'16px',overflowX:'auto',paddingBottom:'4px'}}>
                 {[
                     { id:'friends', label:'Mes amis', count: friends.length },
@@ -512,11 +567,11 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
                                         <div style={{position:'relative'}}>
                                             <img src={fp.photoURL||getAvatar(fp.displayName||'User')}
                                                 style={{width:'44px',height:'44px',borderRadius:'12px',objectFit:'cover',border:'1px solid rgba(234,88,12,.2)'}}/>
-                                            <div style={{position:'absolute',bottom:'-3px',right:'-3px',width:'12px',height:'12px',borderRadius:'50%',background:'#4ade80',border:'2px solid #0f172a'}}/>
+                                            <OnlineIndicator lastSeen={fp.lastSeen} size={12}/>
                                         </div>
                                         <div style={{flex:1,minWidth:0}}>
                                             <p style={{fontWeight:700,fontSize:'13px',color:'white',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{fp.displayName||'Athlète'}</p>
-                                            <p style={{fontSize:'10px',color:'#475569',marginTop:'1px',fontFamily:'monospace',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{f.uid.slice(0,12)}…</p>
+                                            <OnlineBadge lastSeen={fp.lastSeen}/>
                                         </div>
                                         <button
                                             className="delete-btn"
@@ -602,14 +657,14 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
                                 const isLoading = actionLoading[u.uid];
                                 return (
                                     <div key={u.uid} className="discover-card fade-in" style={{animationDelay:`${i*0.07}s`,display:'flex',alignItems:'center',gap:'12px'}}>
-                                        <img src={u.photoURL||getAvatar(u.displayName||'User')}
-                                            style={{width:'44px',height:'44px',borderRadius:'12px',objectFit:'cover',border:'1px solid rgba(30,41,59,.8)',flexShrink:0}}/>
+                                        <div style={{position:'relative',flexShrink:0}}>
+                                            <img src={u.photoURL||getAvatar(u.displayName||'User')}
+                                                style={{width:'44px',height:'44px',borderRadius:'12px',objectFit:'cover',border:'1px solid rgba(30,41,59,.8)'}}/>
+                                            <OnlineIndicator lastSeen={u.lastSeen} size={12}/>
+                                        </div>
                                         <div style={{flex:1,minWidth:0}}>
                                             <p style={{fontWeight:700,fontSize:'13px',color:'white',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.displayName||'Athlète'}</p>
-                                            <div style={{display:'flex',alignItems:'center',gap:'4px',marginTop:'2px'}}>
-                                                <div style={{width:'6px',height:'6px',borderRadius:'50%',background:'#4ade80'}}/>
-                                                <p style={{fontSize:'9px',color:'#4ade80',fontWeight:700,textTransform:'uppercase',letterSpacing:'.08em'}}>Membre actif</p>
-                                            </div>
+                                            <OnlineBadge lastSeen={u.lastSeen}/>
                                         </div>
                                         {isAlreadyFriend ? (
                                             <span className="badge badge-green" style={{fontSize:'9px'}}>
@@ -648,7 +703,6 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
     );
 };
 
-// Request card component (needs to load profile)
 const RequestCard = ({ req, fp: initialFp, isLoading, onAccept, onDecline, animDelay }) => {
     const [fp, setFp] = useState(initialFp);
 
@@ -663,8 +717,11 @@ const RequestCard = ({ req, fp: initialFp, isLoading, onAccept, onDecline, animD
     return (
         <div className="request-card fade-in" style={{animationDelay:`${animDelay}s`}}>
             <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'12px'}}>
-                <img src={fp?.photoURL||getAvatar(fp?.displayName||'User')}
-                    style={{width:'44px',height:'44px',borderRadius:'12px',objectFit:'cover',border:'1px solid rgba(234,179,8,.3)',flexShrink:0}}/>
+                <div style={{position:'relative'}}>
+                    <img src={fp?.photoURL||getAvatar(fp?.displayName||'User')}
+                        style={{width:'44px',height:'44px',borderRadius:'12px',objectFit:'cover',border:'1px solid rgba(234,179,8,.3)',flexShrink:0}}/>
+                    <OnlineIndicator lastSeen={fp?.lastSeen} size={12}/>
+                </div>
                 <div style={{flex:1,minWidth:0}}>
                     <p style={{fontWeight:700,fontSize:'13px',color:'white',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{fp?.displayName||'Athlète'}</p>
                     <p style={{fontSize:'10px',color:'#92400e',marginTop:'2px',fontWeight:600}}>Demande d'ami en attente</p>
@@ -808,6 +865,7 @@ const PrivacyPage = ({ onClose }) => (
                 <li>Pseudo et photo de profil</li>
                 <li>Défis sportifs et progressions</li>
                 <li>Liste d'amis et demandes d'amitié</li>
+                <li>Horodatage de dernière connexion (présence)</li>
             </ul>
             <h2 className="legal-h2">3. Vos droits</h2>
             <p className="legal-p">Accès, rectification, effacement, portabilité — depuis l'onglet Profil → Mes droits.</p>
@@ -1101,9 +1159,13 @@ const CreateChallengeModal = ({ user, profile, friends, friendProfiles, onClose 
                                                 return (
                                                     <button key={f.uid} onClick={()=>setForm(frm=>({...frm,challengedUid:f.uid}))}
                                                         style={{display:'flex',alignItems:'center',gap:'12px',padding:'12px',borderRadius:'14px',border:`1px solid ${selected?'#ea580c':'#1e293b'}`,background:selected?'rgba(234,88,12,.1)':'rgba(15,23,42,.8)',cursor:'pointer',textAlign:'left',transition:'all .15px'}}>
-                                                        <img src={fd.photoURL||getAvatar(fd.displayName)} style={{width:'40px',height:'40px',borderRadius:'12px',objectFit:'cover'}}/>
+                                                        <div style={{position:'relative'}}>
+                                                            <img src={fd.photoURL||getAvatar(fd.displayName)} style={{width:'40px',height:'40px',borderRadius:'12px',objectFit:'cover'}}/>
+                                                            <OnlineIndicator lastSeen={fd.lastSeen} size={12}/>
+                                                        </div>
                                                         <div style={{flex:1}}>
                                                             <p style={{fontWeight:700,fontSize:'13px',color:'white'}}>{fd.displayName||'Contact'}</p>
+                                                            <OnlineBadge lastSeen={fd.lastSeen}/>
                                                         </div>
                                                         {selected && <div style={{width:'20px',height:'20px',borderRadius:'50%',background:'#ea580c',display:'flex',alignItems:'center',justifyContent:'center'}}><Icon name="check" size={12}/></div>}
                                                     </button>
@@ -1201,7 +1263,8 @@ const UpdateProgressModal = ({ challenge, user, onClose }) => {
     );
 };
 
-const ChallengeCard = ({ challenge, user, onUpdate, onAccept, onDecline }) => {
+// ── CHALLENGE CARD — with cancel button for pending sent challenges ──────
+const ChallengeCard = ({ challenge, user, onUpdate, onAccept, onDecline, onCancel }) => {
     const isCreator = challenge.createdBy === user.uid;
     const otherName = isCreator ? challenge.challengedName : challenge.createdByName;
     const otherPhoto = isCreator ? challenge.challengedPhoto : challenge.createdByPhoto;
@@ -1215,6 +1278,12 @@ const ChallengeCard = ({ challenge, user, onUpdate, onAccept, onDecline }) => {
     const isLost = challenge.status==='completed' && challenge.winner===otherUid;
     const isPending = challenge.status==='pending';
     const isActive = challenge.status==='active';
+    const [cancelling, setCancelling] = useState(false);
+
+    const handleCancel = async () => {
+        setCancelling(true);
+        try { await onCancel(challenge.id); } finally { setCancelling(false); }
+    };
 
     return (
         <div className={`challenge-card ${isWon?'won':''} ${isLost?'lost':''} ${isCreator&&!isWon&&!isLost?'mine':''}`} style={{padding:'16px',marginBottom:'12px'}}>
@@ -1260,11 +1329,21 @@ const ChallengeCard = ({ challenge, user, onUpdate, onAccept, onDecline }) => {
                     ))}
                 </div>
             )}
+            {/* Pending — received by me: accept or decline */}
             {isPending&&!isCreator && (
                 <div style={{display:'flex',gap:'8px'}}>
                     <button onClick={()=>onDecline(challenge.id)} style={{flex:1,padding:'10px',borderRadius:'12px',background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',color:'#f87171',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>Refuser</button>
                     <button onClick={()=>onAccept(challenge.id)} style={{flex:2,padding:'10px',borderRadius:'12px',background:'linear-gradient(135deg,#ea580c,#c2410c)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>⚡ Accepter</button>
                 </div>
+            )}
+            {/* Pending — sent by me: cancel button */}
+            {isPending&&isCreator && (
+                <button className="cancel-btn" disabled={cancelling} onClick={handleCancel}>
+                    {cancelling
+                        ? <><div style={{width:'12px',height:'12px',border:'2px solid rgba(148,163,184,.3)',borderTopColor:'#94a3b8',borderRadius:'50%',animation:'spin .7s linear infinite'}}/> Annulation...</>
+                        : <><Icon name="xCircle" size={13}/>Annuler le défi</>
+                    }
+                </button>
             )}
             {isActive && (
                 <button onClick={()=>onUpdate(challenge)}
@@ -1301,8 +1380,8 @@ const LeaderboardTab = ({ user, friends, friendProfiles, challenges }) => {
         });
         return Object.entries(map).map(([uid,s]) => {
             const isMe=uid===user.uid;
-            const p=isMe?{displayName:'Moi',photoURL:user.photoURL||getAvatar('Moi')}:(friendProfiles[uid]||{});
-            return {uid,...s,displayName:p.displayName||'Joueur',photoURL:p.photoURL||getAvatar(p.displayName)};
+            const p=isMe?{displayName:'Moi',photoURL:user.photoURL||getAvatar('Moi'),lastSeen:user.lastSeen}:(friendProfiles[uid]||{});
+            return {uid,...s,displayName:p.displayName||'Joueur',photoURL:p.photoURL||getAvatar(p.displayName),lastSeen:p.lastSeen};
         }).sort((a,b)=>b.pts-a.pts||b.wins-a.wins);
     },[challenges,friends,friendProfiles,user]);
 
@@ -1322,7 +1401,10 @@ const LeaderboardTab = ({ user, friends, friendProfiles, challenges }) => {
                             <div style={{width:'28px',textAlign:'center',fontSize:'20px'}} className="emoji-native">
                                 {['🥇','🥈','🥉'][i] || <span style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'14px',color:'#475569'}}>#{i+1}</span>}
                             </div>
-                            <img src={s.photoURL} style={{width:'36px',height:'36px',borderRadius:'10px',objectFit:'cover'}}/>
+                            <div style={{position:'relative'}}>
+                                <img src={s.photoURL} style={{width:'36px',height:'36px',borderRadius:'10px',objectFit:'cover'}}/>
+                                <OnlineIndicator lastSeen={s.lastSeen} size={10}/>
+                            </div>
                             <div style={{flex:1}}>
                                 <p style={{fontWeight:700,fontSize:'13px',color:s.uid===user.uid?'#f97316':'white'}}>{s.displayName}</p>
                                 <p style={{fontSize:'10px',color:'#64748b'}}>{s.wins} victoire{s.wins!==1?'s':''} · {s.total} défi{s.total!==1?'s':''}</p>
@@ -1369,7 +1451,8 @@ const ProfileTab = ({ user, profile, setProfile, challenges, onShowRights, onSho
             <div style={{background:'rgba(15,23,42,.9)',border:'1px solid rgba(234,88,12,.2)',borderRadius:'20px',padding:'24px',marginBottom:'16px',textAlign:'center'}}>
                 <div style={{position:'relative',display:'inline-block',marginBottom:'12px'}}>
                     <img src={profile.photoURL||getAvatar(profile.displayName)} style={{width:'72px',height:'72px',borderRadius:'18px',objectFit:'cover',border:'2px solid rgba(234,88,12,.3)'}}/>
-                    <div style={{position:'absolute',bottom:'-4px',right:'-4px',width:'20px',height:'20px',borderRadius:'50%',background:'#4ade80',border:'2px solid #020617'}}/>
+                    {/* Own online indicator — always show as online since we're viewing our own profile */}
+                    <div style={{position:'absolute',bottom:'-4px',right:'-4px',width:'16px',height:'16px',borderRadius:'50%',background:'#4ade80',border:'2px solid #020617'}} className="online-dot"/>
                 </div>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'4px'}}>
                     {editing ? (
@@ -1385,6 +1468,10 @@ const ProfileTab = ({ user, profile, setProfile, challenges, onShowRights, onSho
                     )}
                 </div>
                 <p style={{color:'#64748b',fontSize:'11px'}}>{user.email}</p>
+                <div style={{display:'inline-flex',alignItems:'center',gap:'4px',marginTop:'6px',padding:'4px 10px',background:'rgba(74,222,128,.08)',border:'1px solid rgba(74,222,128,.2)',borderRadius:'99px'}}>
+                    <div style={{width:'6px',height:'6px',borderRadius:'50%',background:'#4ade80'}} className="online-dot"/>
+                    <span style={{fontSize:'9px',color:'#4ade80',fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em'}}>En ligne</span>
+                </div>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginTop:'12px',background:'rgba(2,6,23,.7)',border:'1px solid #1e293b',borderRadius:'12px',padding:'8px 12px'}}>
                     <p style={{fontFamily:'monospace',fontSize:'10px',color:'#64748b',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1,textAlign:'left'}}>{user.uid}</p>
                     <button onClick={copyId} style={{padding:'4px',background:'transparent',border:'none',cursor:'pointer',color:copied?'#4ade80':'#64748b',display:'flex',flexShrink:0}}>
@@ -1465,6 +1552,7 @@ function App() {
     const [updateTarget, setUpdateTarget] = useState(null);
     const [filter, setFilter] = useState('all');
     const [friendRequestCount, setFriendRequestCount] = useState(0);
+    const presenceIntervalRef = useRef(null);
 
     useEffect(() => {
         if (!ageConfirmed) { setShowAgeGate(true); setLoading(false); return; }
@@ -1486,11 +1574,42 @@ function App() {
                         ref.set(np); setProfile(np);
                     }
                 });
-            } else { setUser(null); }
+            } else {
+                setUser(null);
+                if (presenceIntervalRef.current) {
+                    clearInterval(presenceIntervalRef.current);
+                    presenceIntervalRef.current = null;
+                }
+            }
             setLoading(false);
         });
         return unsub;
     }, [firebaseReady]);
+
+    // ── PRESENCE: update lastSeen every 60s while logged in ──────────────
+    useEffect(() => {
+        if (!user || !firebaseReady) return;
+
+        // Write presence immediately on login
+        updatePresence(user.uid);
+
+        // Then every 60 seconds
+        presenceIntervalRef.current = setInterval(() => {
+            updatePresence(user.uid);
+        }, PRESENCE_INTERVAL_MS);
+
+        // Write on tab/window visibility change
+        const handleVisibility = () => {
+            if (!document.hidden) updatePresence(user.uid);
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+
+        return () => {
+            clearInterval(presenceIntervalRef.current);
+            presenceIntervalRef.current = null;
+            document.removeEventListener('visibilitychange', handleVisibility);
+        };
+    }, [user, firebaseReady]);
 
     useEffect(() => {
         if (!user||!firebaseReady) return;
@@ -1549,9 +1668,13 @@ function App() {
 
     const acceptChallenge = async (id) => { await db.collection(APEX_APP_ID).doc(id).update({status:'active',accepted:true}); };
     const declineChallenge = async (id) => { await db.collection(APEX_APP_ID).doc(id).update({status:'declined'}); };
+    // ── NEW: cancel a pending challenge (only creator, only pending) ──────
+    const cancelChallenge = async (id) => {
+        await db.collection(APEX_APP_ID).doc(id).update({status:'cancelled'});
+    };
 
     const filteredChallenges = useMemo(() => {
-        if (filter==='all') return challenges.filter(c=>c.status!=='declined');
+        if (filter==='all') return challenges.filter(c=>c.status!=='declined'&&c.status!=='cancelled');
         return challenges.filter(c=>c.status===filter);
     },[challenges,filter]);
 
@@ -1634,7 +1757,7 @@ function App() {
                                             {[
                                                 {label:'Actifs',value:activeCount,color:'#f97316'},
                                                 {label:'Victoires',value:challenges.filter(c=>c.status==='completed'&&c.winner===user.uid).length,color:'#facc15'},
-                                                {label:'Total',value:challenges.filter(c=>c.status!=='declined').length,color:'#60a5fa'},
+                                                {label:'Total',value:challenges.filter(c=>c.status!=='declined'&&c.status!=='cancelled').length,color:'#60a5fa'},
                                             ].map(s => (
                                                 <div key={s.label} style={{background:'rgba(15,23,42,.9)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'14px',padding:'12px',textAlign:'center'}}>
                                                     <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'22px',color:s.color}}>{s.value}</p>
@@ -1665,7 +1788,7 @@ function App() {
                                             filteredChallenges.map(c => (
                                                 <ChallengeCard key={c.id} challenge={c}
                                                     user={{uid:user.uid,photoURL:profile.photoURL,displayName:profile.displayName}}
-                                                    onUpdate={setUpdateTarget} onAccept={acceptChallenge} onDecline={declineChallenge}/>
+                                                    onUpdate={setUpdateTarget} onAccept={acceptChallenge} onDecline={declineChallenge} onCancel={cancelChallenge}/>
                                             ))
                                         )}
                                     </div>
@@ -1699,7 +1822,6 @@ function App() {
                                 )}
                             </div>
 
-                            {/* ── BOTTOM NAV — 4 tabs now ── */}
                             <nav style={{flexShrink:0,borderTop:'1px solid #0f172a',background:'rgba(2,6,23,.98)',display:'flex',justifyContent:'space-around',padding:'6px 4px',paddingBottom:'calc(6px + env(safe-area-inset-bottom))'}}>
                                 {[
                                     {id:'home',icon:'home',label:'Défis'},
@@ -1710,7 +1832,6 @@ function App() {
                                     <button key={n.id} onClick={()=>setTab(n.id)} className={`nav-item ${tab===n.id?'active':''}`} style={{padding:'8px 12px'}}>
                                         <div style={{position:'relative'}}>
                                             <Icon name={n.icon} size={20} className={tab===n.id?'text-orange-500':'text-slate-500'}/>
-                                            {/* Badge for friend requests on Friends tab */}
                                             {n.id==='friends' && friendRequestCount > 0 && (
                                                 <span style={{position:'absolute',top:'-6px',right:'-8px',width:'14px',height:'14px',background:'#facc15',borderRadius:'50%',fontSize:'8px',fontWeight:800,color:'#000',display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid #020617'}}>
                                                     {friendRequestCount > 9 ? '9+' : friendRequestCount}
