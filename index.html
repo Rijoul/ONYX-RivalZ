@@ -105,6 +105,9 @@
         .legal-link { color:#f97316; text-decoration:underline; }
         .rights-modal { position:fixed; inset:0; z-index:9000; background:rgba(2,6,23,.92); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; padding:16px; }
 
+        /* ── RGPD : modale de confirmation de suppression ── */
+        .confirm-modal { position:fixed; inset:0; z-index:10500; background:rgba(2,6,23,.96); backdrop-filter:blur(20px); display:flex; align-items:center; justify-content:center; padding:20px; }
+
         .cookie-banner { position:fixed; bottom:0; left:0; right:0; z-index:8500; background:#0f172a; border-top:2px solid rgba(234,88,12,.4); padding:10px 16px; padding-bottom:calc(10px + env(safe-area-inset-bottom)); display:flex; align-items:center; justify-content:space-between; gap:12px; animation:slideUp .3s ease-out; }
 
         .rgpd-check { width:18px; height:18px; border:2px solid #334155; border-radius:5px; background:transparent; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .2s; }
@@ -128,14 +131,11 @@
         .tab-pill.active { background:rgba(234,88,12,.15); color:#f97316; border:1px solid rgba(234,88,12,.3); }
         .tab-pill.inactive { background:rgba(15,23,42,.8); color:#64748b; border:1px solid rgba(30,41,59,.8); }
 
-        /* Online indicator pulse */
         .online-dot { animation: onlinePulse 2s ease-in-out infinite; }
 
-        /* Cancel challenge button */
         .cancel-btn { width:100%; padding:10px; border-radius:12px; background:rgba(100,116,139,.08); border:1px solid rgba(100,116,139,.25); color:#94a3b8; font-family:'Syne',sans-serif; font-weight:700; font-size:10px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all .2s; }
         .cancel-btn:hover { background:rgba(239,68,68,.08); border-color:rgba(239,68,68,.25); color:#f87171; }
 
-        /* RGPD purpose rows */
         .purpose-row { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid rgba(30,41,59,.6); }
         .purpose-row:last-child { border-bottom:none; }
     </style>
@@ -148,12 +148,13 @@ const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 const CONSENT_KEY = 'apex_consent_v2';
 const CONSENT_VERSION = '2026-05';
-// Durée de validité du consentement : 13 mois (recommandation CNIL)
 const CONSENT_MAX_AGE_MS = 13 * 30 * 24 * 60 * 60 * 1000;
-// How many milliseconds before a user is considered "offline"
-const ONLINE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
-// How often we update our own presence
-const PRESENCE_INTERVAL_MS = 60 * 1000; // 60 seconds
+const ONLINE_THRESHOLD_MS = 2 * 60 * 1000;
+const PRESENCE_INTERVAL_MS = 60 * 1000;
+
+// ── CONTACT DPO ──────────────────────────────────────────────────────────
+const DPO_EMAIL = 'dpo@onyx-rivalz.fr';
+const DPO_ADDRESS = 'Rijoul — ONYX RivalZ, France';
 
 function loadConsent() {
     try {
@@ -161,7 +162,6 @@ function loadConsent() {
         if (!raw) return null;
         const c = JSON.parse(raw);
         if (c.version !== CONSENT_VERSION) return null;
-        // ── RGPD : expiration automatique après 13 mois (recommandation CNIL) ──
         if (c.date && (Date.now() - new Date(c.date).getTime()) > CONSENT_MAX_AGE_MS) {
             localStorage.removeItem(CONSENT_KEY);
             return null;
@@ -232,7 +232,6 @@ const ONYX_APP_ID = 'onyx-pro-chat';
 const APEX_APP_ID = 'apex-sport-challenges';
 const getAvatar = (name) => `https://ui-avatars.com/api/?name=${encodeURIComponent(name||'User')}&background=ea580c&color=fff&bold=true&rounded=true`;
 
-// ── PRESENCE HELPERS ─────────────────────────────────────────────────────
 function isUserOnline(lastSeenTimestamp) {
     if (!lastSeenTimestamp) return false;
     const lastSeen = lastSeenTimestamp.toDate ? lastSeenTimestamp.toDate() : new Date(lastSeenTimestamp);
@@ -245,11 +244,106 @@ async function updatePresence(uid) {
         await db.collection('artifacts').doc(ONYX_APP_ID)
             .collection('public').doc('data').collection('profiles').doc(uid)
             .update({ lastSeen: window.firebase.firestore.FieldValue.serverTimestamp() });
-    } catch(e) { /* silent fail */ }
+    } catch(e) {}
 }
 
-// ── HELPER : vérifie qu'un profil Firestore est valide (non supprimé) ──
-// Un profil est considéré valide uniquement s'il existe ET possède un displayName non vide.
+// ── RGPD ART. 17 : Effacement complet de toutes les données utilisateur ──
+// Supprime : profil public, contacts, défis créés, défis reçus,
+// demandes d'amis envoyées et reçues, puis le compte Firebase Auth.
+// Conforme à l'art. 17 RGPD "droit à l'effacement" — délai cible : immédiat.
+async function deleteAllUserData(uid) {
+    const batch = db.batch();
+
+    // 1. Profil public
+    const profileRef = db.collection('artifacts').doc(ONYX_APP_ID)
+        .collection('public').doc('data').collection('profiles').doc(uid);
+    batch.delete(profileRef);
+
+    // 2. Liste de contacts
+    const contactsRef = db.collection('artifacts').doc(ONYX_APP_ID)
+        .collection('users').doc(uid).collection('contacts').doc('list');
+    batch.delete(contactsRef);
+
+    await batch.commit();
+
+    // 3. Défis créés par l'utilisateur
+    const createdSnap = await db.collection(APEX_APP_ID).where('createdBy', '==', uid).get();
+    const b2 = db.batch();
+    createdSnap.docs.forEach(d => b2.delete(d.ref));
+    if (!createdSnap.empty) await b2.commit();
+
+    // 4. Défis reçus par l'utilisateur
+    const receivedSnap = await db.collection(APEX_APP_ID).where('challengedUid', '==', uid).get();
+    const b3 = db.batch();
+    receivedSnap.docs.forEach(d => b3.delete(d.ref));
+    if (!receivedSnap.empty) await b3.commit();
+
+    // 5. Demandes d'amis envoyées
+    const sentSnap = await db.collection('apex_friend_requests').where('from', '==', uid).get();
+    const b4 = db.batch();
+    sentSnap.docs.forEach(d => b4.delete(d.ref));
+    if (!sentSnap.empty) await b4.commit();
+
+    // 6. Demandes d'amis reçues
+    const recvSnap = await db.collection('apex_friend_requests').where('to', '==', uid).get();
+    const b5 = db.batch();
+    recvSnap.docs.forEach(d => b5.delete(d.ref));
+    if (!recvSnap.empty) await b5.commit();
+
+    // 7. Suppression du compte Firebase Auth (doit être en dernier)
+    if (auth.currentUser) {
+        await auth.currentUser.delete();
+    }
+}
+
+// ── RGPD ART. 20 : Export JSON de toutes les données utilisateur ─────────
+async function exportUserData(uid, profile, challenges) {
+    const friendsDoc = await db.collection('artifacts').doc(ONYX_APP_ID)
+        .collection('users').doc(uid).collection('contacts').doc('list').get();
+
+    const sentReqSnap = await db.collection('apex_friend_requests').where('from', '==', uid).get();
+    const recvReqSnap = await db.collection('apex_friend_requests').where('to', '==', uid).get();
+
+    const exportData = {
+        exportDate: new Date().toISOString(),
+        exportedBy: 'ONYX RivalZ — conformément à l\'art. 20 RGPD',
+        responsableTraitement: DPO_ADDRESS,
+        contactDPO: DPO_EMAIL,
+        compte: {
+            uid,
+            email: auth.currentUser?.email || '',
+            displayName: profile.displayName,
+            photoURL: profile.photoURL,
+            createdAt: profile.createdAt || null,
+        },
+        amis: friendsDoc.exists ? (friendsDoc.data().friends || []) : [],
+        demandesAmiEnvoyees: sentReqSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+        demandesAmiRecues: recvReqSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+        defis: challenges.map(c => ({
+            id: c.id,
+            titre: c.title,
+            sport: c.sport,
+            objectif: c.goal,
+            unite: c.unit,
+            statut: c.status,
+            maProgression: c.progress?.[uid] || 0,
+            gagnant: c.winner || null,
+            createdAt: c.createdAt ? (c.createdAt.toDate ? c.createdAt.toDate().toISOString() : c.createdAt) : null,
+            deadline: c.deadline ? (c.deadline.toDate ? c.deadline.toDate().toISOString() : c.deadline) : null,
+        })),
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `onyx-rivalz-mes-donnees-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 function isValidProfile(docData) {
     return docData && typeof docData.displayName === 'string' && docData.displayName.trim() !== '';
 }
@@ -331,6 +425,8 @@ const Icon = ({ name, size=18, className='' }) => {
         search: <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
         xCircle: <><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></>,
         info: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
+        mail: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>,
+        externalLink: <><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></>,
     };
     return (
         <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -352,7 +448,6 @@ const INPUT_STYLE = {
     color:'white',
 };
 
-// ── ONLINE INDICATOR COMPONENT ────────────────────────────────────────────
 const OnlineIndicator = ({ lastSeen, size = 12 }) => {
     const online = isUserOnline(lastSeen);
     return (
@@ -388,7 +483,51 @@ const OnlineBadge = ({ lastSeen }) => {
     );
 };
 
-// ── FRIENDS TAB ──────────────────────────────────────────────────────────
+// ── MODALE DE CONFIRMATION DE SUPPRESSION DE COMPTE (art. 17 RGPD) ──────
+// Une confirmation explicite est requise avant toute suppression irréversible.
+const DeleteConfirmModal = ({ displayName, onConfirm, onCancel, loading }) => {
+    const [typed, setTyped] = useState('');
+    const required = 'SUPPRIMER';
+    const valid = typed === required;
+
+    return (
+        <div className="confirm-modal">
+            <div className="fade-in" style={{background:'#0f172a',border:'2px solid rgba(239,68,68,.4)',borderRadius:'24px',padding:'24px',width:'100%',maxWidth:'400px'}}>
+                <div style={{textAlign:'center',marginBottom:'20px'}}>
+                    <div style={{fontSize:'40px',marginBottom:'8px'}} className="emoji-native">⚠️</div>
+                    <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'#f87171',marginBottom:'8px'}}>Suppression définitive</h2>
+                    <p style={{fontSize:'11px',color:'#94a3b8',lineHeight:1.7}}>
+                        Cette action est <strong style={{color:'white'}}>irréversible</strong>. Toutes vos données seront effacées immédiatement : profil, amis, défis, historique (art. 17 RGPD).<br/><br/>
+                        Pour confirmer, tapez <strong style={{color:'#f87171',fontFamily:'monospace',letterSpacing:'.1em'}}>SUPPRIMER</strong> ci-dessous.
+                    </p>
+                </div>
+                <input
+                    value={typed}
+                    onChange={e => setTyped(e.target.value)}
+                    placeholder="SUPPRIMER"
+                    style={{...INPUT_STYLE, border:`1px solid ${valid ? 'rgba(239,68,68,.5)' : '#1e293b'}`, textAlign:'center', letterSpacing:'.15em', fontWeight:800, fontFamily:'monospace', fontSize:'14px', marginBottom:'16px'}}
+                />
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px'}}>
+                    <button onClick={onCancel} disabled={loading}
+                        style={{padding:'13px',borderRadius:'14px',background:'rgba(30,41,59,.9)',border:'1px solid #1e293b',color:'#94a3b8',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>
+                        Annuler
+                    </button>
+                    <button onClick={onConfirm} disabled={!valid || loading}
+                        style={{padding:'13px',borderRadius:'14px',background:valid&&!loading?'rgba(239,68,68,.2)':'rgba(30,41,59,.8)',border:`1px solid ${valid&&!loading?'rgba(239,68,68,.5)':'#1e293b'}`,color:valid&&!loading?'#f87171':'#475569',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:valid&&!loading?'pointer':'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
+                        {loading
+                            ? <><div style={{width:'12px',height:'12px',border:'2px solid rgba(248,113,113,.3)',borderTopColor:'#f87171',borderRadius:'50%',animation:'spin .7s linear infinite'}}/> Suppression...</>
+                            : <><Icon name="trash" size={12}/>Confirmer</>
+                        }
+                    </button>
+                </div>
+                <p style={{fontSize:'9px',color:'#475569',textAlign:'center',marginTop:'12px',lineHeight:1.5}}>
+                    Conformément à l'art. 17 RGPD, vos données seront effacées sous 30 jours des sauvegardes systèmes éventuelles.
+                </p>
+            </div>
+        </div>
+    );
+};
+
 const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfiles }) => {
     const [subTab, setSubTab] = useState('friends');
     const [discoverUsers, setDiscoverUsers] = useState([]);
@@ -422,24 +561,17 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
         return unsub;
     }, [user]);
 
-    // ── CORRECTION 1 : filtrage des comptes supprimés de Firebase ─────────
-    // On ne garde que les documents dont le profil Firestore existe réellement
-    // et contient un displayName valide (les comptes supprimés n'ont plus ce champ).
     const loadDiscoverUsers = async () => {
         setLoadingDiscover(true);
         try {
             const snap = await db.collection('artifacts').doc(ONYX_APP_ID)
                 .collection('public').doc('data').collection('profiles')
-                .limit(50) // Récupérer plus pour compenser les filtrages
+                .limit(50)
                 .get();
 
             const allUsers = snap.docs
                 .map(d => ({ uid: d.id, ...d.data() }))
-                // ── Filtre 1 : exclure l'utilisateur courant et ses amis déjà ajoutés ──
                 .filter(u => u.uid !== user.uid && !friendUids.includes(u.uid))
-                // ── Filtre 2 : exclure les profils supprimés / incomplets ──
-                // Un compte supprimé dans Firebase Auth laisse souvent un profil Firestore
-                // sans displayName ou avec des données vides. On l'exclut.
                 .filter(u => isValidProfile(u));
 
             const shuffled = allUsers.sort(() => Math.random() - 0.5).slice(0, 5);
@@ -565,7 +697,6 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
                 ))}
             </div>
 
-            {/* ── MY FRIENDS ── */}
             {subTab === 'friends' && (
                 <div className="fade-in">
                     {friends.length === 0 ? (
@@ -616,7 +747,6 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
                 </div>
             )}
 
-            {/* ── FRIEND REQUESTS ── */}
             {subTab === 'requests' && (
                 <div className="fade-in">
                     {incomingRequests.length === 0 ? (
@@ -646,7 +776,6 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
                 </div>
             )}
 
-            {/* ── DISCOVER ── */}
             {subTab === 'discover' && (
                 <div className="fade-in">
                     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px'}}>
@@ -812,14 +941,13 @@ const AgeGate = ({ onConfirm, onDeny }) => {
     );
 };
 
-// ── CORRECTION 2 : Bannière de consentement RGPD conforme mai 2026 ───────
-// Améliorations apportées :
-//  • Finalités de traitement explicitement listées (art. 13 RGPD)
-//  • Base légale indiquée pour chaque finalité (consentement / intérêt légitime)
-//  • Expiration automatique du consentement à 13 mois (recommandation CNIL)
-//  • Boutons "Refuser" et "Accepter" de taille équivalente (CNIL 2022)
-//  • Mention du droit de retrait à tout moment
-//  • Identité du responsable de traitement visible
+// ── BANNIÈRE DE CONSENTEMENT RGPD ─────────────────────────────────────────
+// Modifications v2026-05 :
+//  • Ajout mention transfert international Firebase/Google (art. 13 §1 f RGPD)
+//  • Ajout lien cnil.fr (droit de réclamation, art. 13 §2 d RGPD)
+//  • lastSeen (indicateur de présence) listé explicitement parmi les finalités
+//  • Versions documents affichées
+//  • Boutons "Refuser" et "Accepter" strictement de même taille (CNIL 2022)
 const ConsentBanner = ({ onAccept, onRefuse, onCustomize, onPrivacy, onTerms }) => (
     <div className="rgpd-overlay">
         <div className="slide-up custom-scroll" style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:'28px',padding:'0',width:'100%',maxWidth:'480px',boxShadow:'0 -20px 60px rgba(0,0,0,.5)',maxHeight:'92vh',overflowY:'auto'}}>
@@ -831,7 +959,13 @@ const ConsentBanner = ({ onAccept, onRefuse, onCustomize, onPrivacy, onTerms }) 
                     </div>
                     <div style={{flex:1}}>
                         <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',letterSpacing:'.12em',textTransform:'uppercase',color:'white',marginBottom:'4px'}}>Gestion de vos données personnelles</h2>
-                        <p style={{fontSize:'10px',color:'#64748b',lineHeight:1.5}}>Responsable du traitement : <strong style={{color:'#94a3b8'}}>Rijoul — ONYX RivalZ</strong> (France)</p>
+                        <p style={{fontSize:'10px',color:'#64748b',lineHeight:1.5}}>
+                            Responsable du traitement : <strong style={{color:'#94a3b8'}}>{DPO_ADDRESS}</strong>
+                        </p>
+                        {/* ── NOUVEAU : Contact DPO visible dès le banner (art. 13 §1 b RGPD) ── */}
+                        <p style={{fontSize:'9px',color:'#475569',marginTop:'2px'}}>
+                            Contact DPO : <span style={{color:'#f97316'}}>{DPO_EMAIL}</span>
+                        </p>
                     </div>
                 </div>
             </div>
@@ -839,14 +973,13 @@ const ConsentBanner = ({ onAccept, onRefuse, onCustomize, onPrivacy, onTerms }) 
             {/* Finalités */}
             <div style={{padding:'14px 20px'}}>
                 <p style={{fontSize:'10px',color:'#94a3b8',lineHeight:1.6,marginBottom:'12px'}}>
-                    Avant d'utiliser ONYX RivalZ, nous vous informons des traitements de données personnelles réalisés et recueillons votre consentement lorsqu'il est requis (art. 6 et 13 RGPD).
+                    Avant d'utiliser ONYX RivalZ, nous vous informons des traitements réalisés et recueillons votre consentement lorsqu'il est requis (art. 6 et 13 RGPD).
                 </p>
 
-                {/* Tableau des finalités */}
                 <div style={{background:'rgba(2,6,23,.5)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'14px',padding:'4px 12px',marginBottom:'14px'}}>
                     {[
                         { icon:'shield', label:'Données essentielles', desc:'Authentification Firebase, sécurité du compte.', base:'Exécution du contrat — obligatoire', required:true },
-                        { icon:'users', label:'Profil & amis', desc:'Pseudo, photo, liste de contacts, statut en ligne.', base:'Consentement', required:false },
+                        { icon:'users', label:'Profil & amis', desc:'Pseudo, photo, liste de contacts, statut de présence (horodatage lastSeen).', base:'Consentement', required:false },
                         { icon:'chartbar', label:'Défis & classements', desc:'Historique sportif, scores, progressions.', base:'Consentement', required:false },
                     ].map((item, i) => (
                         <div key={i} className="purpose-row">
@@ -865,14 +998,25 @@ const ConsentBanner = ({ onAccept, onRefuse, onCustomize, onPrivacy, onTerms }) 
                     ))}
                 </div>
 
+                {/* ── NOUVEAU : Mention transfert international (art. 13 §1 f RGPD) ── */}
+                <div style={{background:'rgba(30,41,59,.4)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'10px',padding:'10px 12px',marginBottom:'12px'}}>
+                    <p style={{fontSize:'9px',color:'#64748b',lineHeight:1.6}}>
+                        <strong style={{color:'#94a3b8'}}>Transfert international :</strong> Vos données sont hébergées par Google Firebase (sous-traitant). Des transferts vers les États-Unis peuvent avoir lieu sur la base des Clauses Contractuelles Types (CCT) adoptées par la Commission européenne. Aucune donnée n'est vendue à des tiers.
+                    </p>
+                </div>
+
+                <p style={{fontSize:'9px',color:'#475569',lineHeight:1.6,marginBottom:'6px'}}>
+                    Vous pouvez retirer votre consentement à tout moment via <strong style={{color:'#94a3b8'}}>Profil → Confidentialité</strong>. Votre choix expire automatiquement après <strong style={{color:'#94a3b8'}}>13 mois</strong>.
+                </p>
+                {/* ── NOUVEAU : Lien CNIL (art. 13 §2 d RGPD — droit de réclamation) ── */}
                 <p style={{fontSize:'9px',color:'#475569',lineHeight:1.6,marginBottom:'14px'}}>
-                    Vous pouvez retirer votre consentement à tout moment depuis l'onglet <strong style={{color:'#94a3b8'}}>Profil → Confidentialité</strong>. Le retrait ne remet pas en cause la licéité des traitements antérieurs. Votre choix expire automatiquement après <strong style={{color:'#94a3b8'}}>13 mois</strong>.
+                    Vous avez le droit d'introduire une réclamation auprès de la{' '}
+                    <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" style={{color:'#f97316',textDecoration:'underline'}}>CNIL (cnil.fr)</a>.
                 </p>
             </div>
 
-            {/* Boutons — taille équivalente (CNIL 2022) */}
+            {/* Boutons — taille strictement égale (CNIL 2022) */}
             <div style={{padding:'0 20px 20px',display:'flex',flexDirection:'column',gap:'8px'}}>
-                {/* Refuser et Accepter de taille égale */}
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}}>
                     <button onClick={onRefuse}
                         style={{padding:'13px',borderRadius:'14px',background:'rgba(30,41,59,.9)',border:'1px solid rgba(100,116,139,.5)',color:'#94a3b8',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>
@@ -888,9 +1032,9 @@ const ConsentBanner = ({ onAccept, onRefuse, onCustomize, onPrivacy, onTerms }) 
                     Personnaliser mes choix
                 </button>
                 <div style={{display:'flex',justifyContent:'center',gap:'16px',paddingTop:'4px'}}>
-                    <button onClick={onPrivacy} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>Politique de confidentialité</button>
+                    <button onClick={onPrivacy} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>Politique de confidentialité v2.0</button>
                     <span style={{color:'#1e293b',fontSize:'9px'}}>·</span>
-                    <button onClick={onTerms} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>CGU</button>
+                    <button onClick={onTerms} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>CGU v2.0</button>
                 </div>
             </div>
         </div>
@@ -956,7 +1100,7 @@ const ConsentCustomizer = ({ onSave, onClose }) => {
                 ))}
 
                 <p style={{fontSize:'9px',color:'#475569',lineHeight:1.6,marginTop:'14px',marginBottom:'16px'}}>
-                    Votre consentement sera conservé pendant <strong style={{color:'#94a3b8'}}>13 mois</strong> maximum, conformément à la recommandation de la CNIL.
+                    Votre consentement sera conservé pendant <strong style={{color:'#94a3b8'}}>13 mois</strong> maximum (recommandation CNIL). Vous pouvez le retirer à tout moment depuis <strong style={{color:'#94a3b8'}}>Profil → Confidentialité</strong>.
                 </p>
 
                 <button onClick={() => onSave(prefs)} style={{width:'100%',padding:'14px',borderRadius:'14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>
@@ -967,6 +1111,13 @@ const ConsentCustomizer = ({ onSave, onClose }) => {
     );
 };
 
+// ── POLITIQUE DE CONFIDENTIALITÉ ─────────────────────────────────────────
+// Modifications v2026-05 :
+//  • Mention transfert international avec base légale exacte (CCT — art. 46 §2 c RGPD)
+//  • Référence au DPA (Data Processing Agreement) Google
+//  • Ajout sous-traitant Google LLC avec coordonnées
+//  • Précision sur les sauvegardes système (délai résiduel 30 j)
+//  • Lien direct CNIL et formulaire de contact DPO
 const PrivacyPage = ({ onClose }) => (
     <div className="legal-overlay">
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 20px',borderBottom:'1px solid #1e293b',background:'rgba(15,23,42,.8)',flexShrink:0}}>
@@ -974,39 +1125,56 @@ const PrivacyPage = ({ onClose }) => (
             <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'10px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}><Icon name="x" size={16}/></button>
         </div>
         <div className="legal-scroll custom-scroll" style={{padding:'20px'}}>
-            <p className="legal-p" style={{color:'#475569',fontSize:'10px'}}>Dernière mise à jour : <strong style={{color:'#f97316'}}>mai 2026</strong></p>
+            <p className="legal-p" style={{color:'#475569',fontSize:'10px'}}>Version <strong style={{color:'#f97316'}}>2.0</strong> — Dernière mise à jour : <strong style={{color:'#f97316'}}>mai 2026</strong></p>
 
             <h2 className="legal-h2">1. Responsable du traitement</h2>
-            <p className="legal-p">Rijoul — développeur indépendant, France. Contact DPO : <span style={{color:'#f97316'}}>contact@onyx-rivalz.fr</span></p>
+            <p className="legal-p">
+                <strong style={{color:'white'}}>{DPO_ADDRESS}</strong><br/>
+                Délégué à la protection des données (DPO) : <a href={`mailto:${DPO_EMAIL}`} className="legal-link">{DPO_EMAIL}</a>
+            </p>
 
             <h2 className="legal-h2">2. Données collectées et finalités</h2>
             <ul className="legal-ul">
-                <li><strong style={{color:'white'}}>Email + UID Firebase</strong> — authentification (exécution du contrat)</li>
-                <li><strong style={{color:'white'}}>Pseudo, photo de profil</strong> — identification dans l'application (consentement)</li>
-                <li><strong style={{color:'white'}}>Défis sportifs, progressions</strong> — fonctionnalité principale (consentement)</li>
-                <li><strong style={{color:'white'}}>Liste d'amis et demandes</strong> — réseau social sportif (consentement)</li>
-                <li><strong style={{color:'white'}}>Horodatage de connexion (lastSeen)</strong> — indicateur de présence (consentement)</li>
+                <li><strong style={{color:'white'}}>Email + UID Firebase</strong> — authentification sécurisée (base légale : exécution du contrat, art. 6 §1 b RGPD)</li>
+                <li><strong style={{color:'white'}}>Pseudo, photo de profil</strong> — identification dans l'application (base légale : consentement, art. 6 §1 a RGPD)</li>
+                <li><strong style={{color:'white'}}>Défis sportifs, progressions, scores</strong> — fonctionnalité principale (base légale : consentement)</li>
+                <li><strong style={{color:'white'}}>Liste d'amis et demandes</strong> — réseau social sportif (base légale : consentement)</li>
+                <li><strong style={{color:'white'}}>Horodatage de connexion (lastSeen)</strong> — indicateur de présence en ligne (base légale : consentement). Donnée conservée uniquement dans le profil public ; visible des autres utilisateurs.</li>
             </ul>
 
             <h2 className="legal-h2">3. Durée de conservation</h2>
-            <p className="legal-p">Les données sont conservées pendant la durée d'activité du compte. En cas de suppression du compte, les données sont effacées sous 30 jours. Le consentement est renouvelé tous les 13 mois (recommandation CNIL).</p>
+            <p className="legal-p">Les données sont conservées pendant toute la durée d'activité du compte. En cas de suppression du compte (exercice du droit à l'effacement, art. 17 RGPD), les données sont effacées des bases actives <strong style={{color:'white'}}>immédiatement</strong> et des sauvegardes systèmes éventuelles sous <strong style={{color:'white'}}>30 jours</strong>. Le consentement est renouvelé automatiquement tous les <strong style={{color:'white'}}>13 mois</strong> (recommandation CNIL).</p>
 
-            <h2 className="legal-h2">4. Destinataires des données</h2>
-            <p className="legal-p">Google Firebase (hébergement UE/USA — décision d'adéquation). Aucune donnée n'est vendue à des tiers.</p>
+            <h2 className="legal-h2">4. Sous-traitant et transfert international</h2>
+            <p className="legal-p">
+                Les données sont hébergées par notre sous-traitant unique :<br/>
+                <strong style={{color:'white'}}>Google LLC</strong> — Firebase (1600 Amphitheatre Pkwy, Mountain View, CA 94043, USA)
+            </p>
+            <p className="legal-p">
+                Des transferts de données personnelles vers les États-Unis peuvent intervenir. Ces transferts sont encadrés par les <strong style={{color:'white'}}>Clauses Contractuelles Types (CCT)</strong> adoptées par la Commission européenne (Décision 2021/914 du 4 juin 2021), conformément à l'art. 46 §2 c RGPD.
+            </p>
+            <p className="legal-p">
+                Google Firebase est certifié ISO 27001 et SOC 2. Le contrat de traitement des données (DPA) avec Google est disponible sur <a href="https://firebase.google.com/terms/data-processing-terms" target="_blank" rel="noopener noreferrer" className="legal-link">firebase.google.com/terms/data-processing-terms</a>. <strong style={{color:'white'}}>Aucune donnée n'est vendue à des tiers.</strong>
+            </p>
 
             <h2 className="legal-h2">5. Vos droits (art. 15 à 22 RGPD)</h2>
             <ul className="legal-ul">
-                <li>Droit d'accès et de rectification</li>
-                <li>Droit à l'effacement (« droit à l'oubli »)</li>
-                <li>Droit à la portabilité des données</li>
-                <li>Droit d'opposition et de limitation du traitement</li>
-                <li>Droit de retirer votre consentement à tout moment</li>
-                <li>Droit d'introduire une réclamation auprès de la CNIL (cnil.fr)</li>
+                <li><strong style={{color:'white'}}>Droit d'accès</strong> (art. 15) — consulter vos données</li>
+                <li><strong style={{color:'white'}}>Droit de rectification</strong> (art. 16) — corriger vos données</li>
+                <li><strong style={{color:'white'}}>Droit à l'effacement</strong> (art. 17) — supprimer votre compte et toutes vos données</li>
+                <li><strong style={{color:'white'}}>Droit à la portabilité</strong> (art. 20) — export JSON de vos données</li>
+                <li><strong style={{color:'white'}}>Droit d'opposition</strong> (art. 21) — vous opposer à un traitement</li>
+                <li><strong style={{color:'white'}}>Droit de limitation</strong> (art. 18) — restreindre un traitement</li>
+                <li><strong style={{color:'white'}}>Droit de retrait du consentement</strong> — à tout moment, sans effet rétroactif</li>
+                <li><strong style={{color:'white'}}>Droit d'introduire une réclamation</strong> auprès de la <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" className="legal-link">CNIL (cnil.fr)</a></li>
             </ul>
-            <p className="legal-p">Exercez vos droits via l'onglet <strong style={{color:'white'}}>Profil → Mes droits RGPD</strong> ou par email.</p>
+            <p className="legal-p">Exercez vos droits via <strong style={{color:'white'}}>Profil → Mes droits RGPD</strong> ou par email à <a href={`mailto:${DPO_EMAIL}`} className="legal-link">{DPO_EMAIL}</a>. Réponse sous <strong style={{color:'white'}}>30 jours</strong> (art. 12 §3 RGPD).</p>
 
             <h2 className="legal-h2">6. Sécurité</h2>
-            <p className="legal-p">Les données sont protégées par les mécanismes de sécurité de Google Firebase (chiffrement au repos et en transit, authentification à deux facteurs disponible).</p>
+            <p className="legal-p">Les données sont protégées par les mécanismes de sécurité Google Firebase : chiffrement au repos (AES-256) et en transit (TLS 1.3), authentification multifacteur disponible, journalisation des accès.</p>
+
+            <h2 className="legal-h2">7. Cookies et traceurs</h2>
+            <p className="legal-p">ONYX RivalZ n'utilise pas de cookies tiers à des fins publicitaires. Le seul stockage local utilisé est <strong style={{color:'white'}}>localStorage</strong> pour mémoriser vos préférences de consentement (durée : 13 mois), conformément à l'exemption CNIL pour les cookies strictement nécessaires au service.</p>
 
             <div style={{height:'32px'}}/>
         </div>
@@ -1020,9 +1188,9 @@ const TermsPage = ({ onClose }) => (
             <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'10px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}><Icon name="x" size={16}/></button>
         </div>
         <div className="legal-scroll custom-scroll" style={{padding:'20px'}}>
-            <p className="legal-p" style={{color:'#475569',fontSize:'10px'}}>Dernière mise à jour : <strong style={{color:'#f97316'}}>mai 2026</strong> — Version 2.0</p>
+            <p className="legal-p" style={{color:'#475569',fontSize:'10px'}}>Dernière mise à jour : <strong style={{color:'#f97316'}}>mai 2026</strong> — Version <strong style={{color:'#f97316'}}>2.0</strong></p>
             <h2 className="legal-h2">1. Présentation</h2>
-            <p className="legal-p">ONYX RivalZ est une application web de défis sportifs entre utilisateurs, éditée par Rijoul, développeur indépendant (France).</p>
+            <p className="legal-p">ONYX RivalZ est une application web de défis sportifs entre utilisateurs, éditée par Rijoul, développeur indépendant (France). Contact : <a href={`mailto:${DPO_EMAIL}`} className="legal-link">{DPO_EMAIL}</a></p>
             <h2 className="legal-h2">2. Âge minimum</h2>
             <p className="legal-p">16 ans dans l'Union Européenne (art. 8 RGPD). En dehors de l'UE, l'âge minimum est de 13 ans conformément aux lois locales applicables.</p>
             <h2 className="legal-h2">3. Utilisations interdites</h2>
@@ -1031,32 +1199,89 @@ const TermsPage = ({ onClose }) => (
                 <li>Contenu illicite, violent ou dangereux</li>
                 <li>Toute activité contraire à la législation française et européenne</li>
             </ul>
-            <h2 className="legal-h2">4. Responsabilité</h2>
-            <p className="legal-p">L'éditeur ne saurait être tenu responsable des dommages résultant d'une utilisation non conforme aux présentes CGU.</p>
-            <h2 className="legal-h2">5. Droit applicable</h2>
-            <p className="legal-p">Les présentes CGU sont régies par le droit français. Tout litige relève des juridictions compétentes de France.</p>
+            <h2 className="legal-h2">4. Propriété intellectuelle</h2>
+            <p className="legal-p">L'application, son design et son code source sont la propriété exclusive de Rijoul. Toute reproduction sans autorisation est interdite.</p>
+            <h2 className="legal-h2">5. Responsabilité</h2>
+            <p className="legal-p">L'éditeur ne saurait être tenu responsable des dommages résultant d'une utilisation non conforme aux présentes CGU. L'application est fournie "telle quelle" sans garantie de disponibilité continue.</p>
+            <h2 className="legal-h2">6. Modification des CGU</h2>
+            <p className="legal-p">En cas de modification substantielle, les utilisateurs seront informés par notification dans l'application. La poursuite de l'utilisation vaut acceptation.</p>
+            <h2 className="legal-h2">7. Droit applicable et juridiction</h2>
+            <p className="legal-p">Les présentes CGU sont régies par le droit français. Tout litige relève des juridictions compétentes de France, sous réserve des règles impératives applicables au consommateur.</p>
             <div style={{height:'32px'}}/>
         </div>
     </div>
 );
 
-const RightsModal = ({ user, onClose, onDeleteAccount }) => {
+// ── MODALE DROITS RGPD ────────────────────────────────────────────────────
+// Modifications v2026-05 :
+//  • Effacement complet Firestore via deleteAllUserData() (art. 17 RGPD)
+//  • Confirmation obligatoire avant suppression (DeleteConfirmModal)
+//  • Export JSON des données (art. 20 RGPD)
+//  • Lien CNIL direct
+//  • Délai de réponse affiché (art. 12 §3 RGPD)
+const RightsModal = ({ user, profile, challenges, onClose, onManageConsent }) => {
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [exporting, setExporting] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
+
+    const handleDeleteConfirmed = async () => {
+        setDeleting(true);
+        setDeleteError('');
+        try {
+            await deleteAllUserData(user.uid);
+            revokeConsent();
+            // La déconnexion est implicite via auth.currentUser.delete()
+            window.location.reload();
+        } catch (e) {
+            // Si le token Firebase est expiré (> 5 min), on demande une reconnexion
+            if (e.code === 'auth/requires-recent-login') {
+                setDeleteError('Pour des raisons de sécurité, veuillez vous déconnecter puis vous reconnecter avant de supprimer votre compte.');
+            } else {
+                setDeleteError('Une erreur est survenue. Veuillez réessayer ou contacter ' + DPO_EMAIL);
+            }
+            setDeleting(false);
+        }
+    };
+
+    const handleExport = async () => {
+        setExporting(true);
+        try {
+            await exportUserData(user.uid, profile, challenges);
+        } catch(e) {
+            console.error('Export error:', e);
+        }
+        setExporting(false);
+    };
+
+    if (showDeleteConfirm) {
+        return (
+            <DeleteConfirmModal
+                displayName={profile.displayName}
+                onConfirm={handleDeleteConfirmed}
+                onCancel={() => { setShowDeleteConfirm(false); setDeleteError(''); }}
+                loading={deleting}
+            />
+        );
+    }
+
     return (
         <div className="rights-modal">
-            <div className="fade-in" style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:'24px',padding:'24px',width:'100%',maxWidth:'420px'}}>
+            <div className="fade-in custom-scroll" style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:'24px',padding:'24px',width:'100%',maxWidth:'420px',maxHeight:'90vh',overflowY:'auto'}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
                     <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white'}}>Mes droits RGPD</h2>
                     <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'10px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}><Icon name="x" size={16}/></button>
                 </div>
                 <p style={{color:'#64748b',fontSize:'12px',lineHeight:1.6,marginBottom:'16px'}}>
-                    Conformément aux articles 15 à 22 du RGPD, vous disposez des droits suivants sur vos données personnelles.
+                    Conformément aux articles 15 à 22 du RGPD, vous disposez des droits suivants. Toute demande recevra une réponse sous <strong style={{color:'white'}}>30 jours</strong> (art. 12 §3 RGPD).
                 </p>
+
                 <div style={{display:'flex',flexDirection:'column',gap:'8px',marginBottom:'16px'}}>
                     {[
-                        { label:'Accès & rectification', desc:'Consultez et corrigez vos données' },
-                        { label:'Effacement', desc:'Suppression de votre compte et données sous 30 jours' },
-                        { label:'Portabilité', desc:'Export de vos données au format JSON' },
-                        { label:'Opposition & limitation', desc:'Limitez certains traitements' },
+                        { label:'Accès & rectification (art. 15-16)', desc:'Consultez et corrigez vos données via votre profil' },
+                        { label:'Effacement (art. 17)', desc:'Suppression de votre compte et données — immédiat en base active, 30 j en sauvegardes' },
+                        { label:'Portabilité (art. 20)', desc:'Export JSON de l\'ensemble de vos données' },
+                        { label:'Opposition & limitation (art. 18-21)', desc:'Limitez ou refusez certains traitements via vos préférences' },
                         { label:'Retrait du consentement', desc:'Modifiable à tout moment sans effet rétroactif' },
                     ].map(r => (
                         <div key={r.label} style={{display:'flex',gap:'10px',padding:'10px',background:'rgba(2,6,23,.5)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'10px'}}>
@@ -1068,13 +1293,46 @@ const RightsModal = ({ user, onClose, onDeleteAccount }) => {
                         </div>
                     ))}
                 </div>
-                <p style={{fontSize:'10px',color:'#475569',lineHeight:1.6,marginBottom:'16px'}}>
-                    Pour exercer un droit, utilisez le bouton ci-dessous ou contactez : <strong style={{color:'#f97316'}}>contact@onyx-rivalz.fr</strong>. Vous pouvez également saisir la <strong style={{color:'#94a3b8'}}>CNIL</strong> (cnil.fr) en cas de réclamation.
-                </p>
-                <button onClick={() => { auth.signOut(); revokeConsent(); window.location.reload(); }}
-                    style={{width:'100%',padding:'14px',borderRadius:'14px',background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',color:'#f87171',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',cursor:'pointer',marginBottom:'8px'}}>
-                    Supprimer mon compte et mes données
+
+                {/* Contact DPO */}
+                <div style={{background:'rgba(234,88,12,.06)',border:'1px solid rgba(234,88,12,.2)',borderRadius:'12px',padding:'12px',marginBottom:'12px'}}>
+                    <p style={{fontSize:'10px',color:'#94a3b8',lineHeight:1.6}}>
+                        Pour exercer un droit ou poser une question :<br/>
+                        <a href={`mailto:${DPO_EMAIL}`} style={{color:'#f97316',fontWeight:700,textDecoration:'underline'}}>{DPO_EMAIL}</a>
+                    </p>
+                    <p style={{fontSize:'9px',color:'#64748b',marginTop:'6px',lineHeight:1.5}}>
+                        Vous pouvez également saisir la{' '}
+                        <a href="https://www.cnil.fr/fr/vous-souhaitez-contacter-la-cnil" target="_blank" rel="noopener noreferrer" style={{color:'#f97316',textDecoration:'underline'}}>CNIL</a>{' '}
+                        (cnil.fr) en cas de réclamation non résolue.
+                    </p>
+                </div>
+
+                {/* ── NOUVEAU : Bouton export données (art. 20 RGPD) ── */}
+                <button onClick={handleExport} disabled={exporting}
+                    style={{width:'100%',padding:'12px',borderRadius:'14px',background:'rgba(59,130,246,.08)',border:'1px solid rgba(59,130,246,.25)',color:'#60a5fa',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',marginBottom:'8px',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
+                    {exporting
+                        ? <><div style={{width:'12px',height:'12px',border:'2px solid rgba(96,165,250,.3)',borderTopColor:'#60a5fa',borderRadius:'50%',animation:'spin .7s linear infinite'}}/> Export en cours...</>
+                        : <><Icon name="download" size={14}/>Télécharger mes données (JSON)</>
+                    }
                 </button>
+
+                {/* Gérer le consentement */}
+                <button onClick={onManageConsent}
+                    style={{width:'100%',padding:'12px',borderRadius:'14px',background:'rgba(234,88,12,.08)',border:'1px solid rgba(234,88,12,.2)',color:'#fb923c',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',marginBottom:'8px',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
+                    <Icon name="settings" size={14}/>Gérer mes préférences de consentement
+                </button>
+
+                {/* ── NOUVEAU : Suppression avec effacement Firestore complet ── */}
+                {deleteError && (
+                    <div style={{background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.3)',borderRadius:'10px',padding:'10px 12px',marginBottom:'8px',color:'#f87171',fontSize:'10px',lineHeight:1.5}}>
+                        {deleteError}
+                    </div>
+                )}
+                <button onClick={() => setShowDeleteConfirm(true)}
+                    style={{width:'100%',padding:'14px',borderRadius:'14px',background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',color:'#f87171',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',cursor:'pointer',marginBottom:'8px',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
+                    <Icon name="trash" size={14}/>Supprimer mon compte et mes données
+                </button>
+
                 <button onClick={onClose} style={{width:'100%',padding:'12px',borderRadius:'14px',background:'rgba(30,41,59,.8)',border:'1px solid #1e293b',color:'#64748b',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',cursor:'pointer'}}>Fermer</button>
             </div>
         </div>
@@ -1584,6 +1842,10 @@ const LeaderboardTab = ({ user, friends, friendProfiles, challenges }) => {
     );
 };
 
+// ── ONGLET PROFIL ─────────────────────────────────────────────────────────
+// Modifications v2026-05 :
+//  • Passe profile et challenges à RightsModal pour l'export (art. 20 RGPD)
+//  • Passe onManageConsent à RightsModal
 const ProfileTab = ({ user, profile, setProfile, challenges, onShowRights, onShowPrivacy, onShowTerms, onManageConsent }) => {
     const [editing, setEditing] = useState(false);
     const [nameInput, setNameInput] = useState(profile.displayName||'');
@@ -1663,9 +1925,9 @@ const ProfileTab = ({ user, profile, setProfile, challenges, onShowRights, onSho
                 </p>
                 <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
                     {[
-                        {label:'Mes droits RGPD', desc:'Accès, export, effacement, portabilité, opposition', onClick:onShowRights, icon:'download'},
-                        {label:'Gérer mes préférences', desc:'Modifier ou retirer mon consentement', onClick:onManageConsent, icon:'settings'},
-                        {label:'Politique de confidentialité', desc:'Version 2.0 · Mai 2026', onClick:onShowPrivacy, icon:'shield'},
+                        {label:'Mes droits RGPD', desc:'Accès, export, effacement, portabilité, opposition (art. 15-22)', onClick:onShowRights, icon:'download'},
+                        {label:'Gérer mes préférences', desc:'Modifier ou retirer mon consentement à tout moment', onClick:onManageConsent, icon:'settings'},
+                        {label:'Politique de confidentialité', desc:'Version 2.0 · Mai 2026 · Transferts Firebase/Google', onClick:onShowPrivacy, icon:'shield'},
                         {label:'Conditions générales', desc:'Version 2.0 · Mai 2026', onClick:onShowTerms, icon:'alertTriangle'},
                     ].map(item => (
                         <button key={item.label} onClick={item.onClick}
@@ -1681,6 +1943,20 @@ const ProfileTab = ({ user, profile, setProfile, challenges, onShowRights, onSho
                         </button>
                     ))}
                 </div>
+            </div>
+            {/* ── Contact DPO visible dans le profil (art. 13 §1 b RGPD) ── */}
+            <div style={{background:'rgba(15,23,42,.6)',border:'1px solid rgba(30,41,59,.6)',borderRadius:'14px',padding:'12px',marginBottom:'12px',display:'flex',alignItems:'center',gap:'10px'}}>
+                <div style={{width:'28px',height:'28px',borderRadius:'8px',background:'rgba(234,88,12,.08)',border:'1px solid rgba(234,88,12,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,color:'#f97316'}}>
+                    <Icon name="mail" size={13}/>
+                </div>
+                <div style={{flex:1}}>
+                    <p style={{fontSize:'10px',fontWeight:700,color:'#94a3b8'}}>Contact DPO / Données personnelles</p>
+                    <a href={`mailto:${DPO_EMAIL}`} style={{fontSize:'10px',color:'#f97316',textDecoration:'underline'}}>{DPO_EMAIL}</a>
+                </div>
+                <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer"
+                    style={{padding:'5px 10px',background:'rgba(30,41,59,.8)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'8px',color:'#64748b',fontSize:'9px',fontWeight:700,textDecoration:'none',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'4px'}}>
+                    CNIL <Icon name="externalLink" size={9}/>
+                </a>
             </div>
             <button onClick={()=>auth.signOut()}
                 style={{width:'100%',padding:'14px',borderRadius:'14px',background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',color:'#f87171',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'32px'}}>
@@ -1841,7 +2117,7 @@ function App() {
             <div className="fade-in">
                 <div style={{fontSize:'48px',marginBottom:'16px'}} className="emoji-native">🔒</div>
                 <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'18px',color:'white',marginBottom:'8px'}}>Accès non autorisé</h2>
-                <p style={{color:'#64748b',fontSize:'12px',lineHeight:1.7,maxWidth:'280px'}}>ONYX RivalZ est réservé aux personnes âgées de 16 ans ou plus.</p>
+                <p style={{color:'#64748b',fontSize:'12px',lineHeight:1.7,maxWidth:'280px'}}>ONYX RivalZ est réservé aux personnes âgées de 16 ans ou plus (art. 8 RGPD).</p>
                 <button onClick={()=>setShowAgeGate(true)} style={{marginTop:'20px',padding:'12px 24px',background:'rgba(30,41,59,.8)',border:'1px solid #1e293b',borderRadius:'12px',color:'#94a3b8',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>
                     J'ai en réalité 16 ans ou plus
                 </button>
@@ -1864,8 +2140,15 @@ function App() {
             {showCustomizer && (
                 <ConsentCustomizer onSave={handleCustomSave} onClose={()=>setShowCustomizer(false)}/>
             )}
+            {/* ── CORRECTION : RightsModal reçoit profile et challenges pour l'export ── */}
             {showRights && user && (
-                <RightsModal user={user} onClose={()=>setShowRights(false)} onDeleteAccount={()=>{ auth.signOut(); revokeConsent(); window.location.reload(); }}/>
+                <RightsModal
+                    user={user}
+                    profile={profile}
+                    challenges={challenges}
+                    onClose={()=>setShowRights(false)}
+                    onManageConsent={handleManageConsent}
+                />
             )}
 
             {consentState && !showConsentBanner && (
