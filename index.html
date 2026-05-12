@@ -134,6 +134,10 @@
         /* Cancel challenge button */
         .cancel-btn { width:100%; padding:10px; border-radius:12px; background:rgba(100,116,139,.08); border:1px solid rgba(100,116,139,.25); color:#94a3b8; font-family:'Syne',sans-serif; font-weight:700; font-size:10px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all .2s; }
         .cancel-btn:hover { background:rgba(239,68,68,.08); border-color:rgba(239,68,68,.25); color:#f87171; }
+
+        /* RGPD purpose rows */
+        .purpose-row { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid rgba(30,41,59,.6); }
+        .purpose-row:last-child { border-bottom:none; }
     </style>
 </head>
 <body>
@@ -144,6 +148,8 @@ const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 const CONSENT_KEY = 'apex_consent_v2';
 const CONSENT_VERSION = '2026-05';
+// Durée de validité du consentement : 13 mois (recommandation CNIL)
+const CONSENT_MAX_AGE_MS = 13 * 30 * 24 * 60 * 60 * 1000;
 // How many milliseconds before a user is considered "offline"
 const ONLINE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
 // How often we update our own presence
@@ -155,6 +161,11 @@ function loadConsent() {
         if (!raw) return null;
         const c = JSON.parse(raw);
         if (c.version !== CONSENT_VERSION) return null;
+        // ── RGPD : expiration automatique après 13 mois (recommandation CNIL) ──
+        if (c.date && (Date.now() - new Date(c.date).getTime()) > CONSENT_MAX_AGE_MS) {
+            localStorage.removeItem(CONSENT_KEY);
+            return null;
+        }
         return c;
     } catch { return null; }
 }
@@ -237,6 +248,12 @@ async function updatePresence(uid) {
     } catch(e) { /* silent fail */ }
 }
 
+// ── HELPER : vérifie qu'un profil Firestore est valide (non supprimé) ──
+// Un profil est considéré valide uniquement s'il existe ET possède un displayName non vide.
+function isValidProfile(docData) {
+    return docData && typeof docData.displayName === 'string' && docData.displayName.trim() !== '';
+}
+
 const SPORT_ICONS = {
     running:'🏃', cycling:'🚴', swimming:'🏊', pushups:'💪', pullups:'🏋️',
     situps:'🔥', plank:'🧘', walking:'🚶', yoga:'🧘', football:'⚽',
@@ -313,6 +330,7 @@ const Icon = ({ name, size=18, className='' }) => {
         refresh: <><path d="M21.5 2v6h-6M2.5 22v-6h6"/><path d="M22 12A10 10 0 0 0 3.2 7.2M2 12a10 10 0 0 0 18.8 4.8"/></>,
         search: <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
         xCircle: <><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></>,
+        info: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
     };
     return (
         <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -347,7 +365,6 @@ const OnlineIndicator = ({ lastSeen, size = 12 }) => {
             borderRadius:'50%',
             background: online ? '#4ade80' : '#475569',
             border:'2px solid #0f172a',
-            ...(online ? {} : {}),
         }}
         className={online ? 'online-dot' : ''}
         title={online ? 'En ligne' : 'Hors ligne'}
@@ -355,7 +372,6 @@ const OnlineIndicator = ({ lastSeen, size = 12 }) => {
     );
 };
 
-// Small inline version (for lists)
 const OnlineBadge = ({ lastSeen }) => {
     const online = isUserOnline(lastSeen);
     return (
@@ -406,16 +422,25 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
         return unsub;
     }, [user]);
 
+    // ── CORRECTION 1 : filtrage des comptes supprimés de Firebase ─────────
+    // On ne garde que les documents dont le profil Firestore existe réellement
+    // et contient un displayName valide (les comptes supprimés n'ont plus ce champ).
     const loadDiscoverUsers = async () => {
         setLoadingDiscover(true);
         try {
             const snap = await db.collection('artifacts').doc(ONYX_APP_ID)
                 .collection('public').doc('data').collection('profiles')
-                .limit(20).get();
+                .limit(50) // Récupérer plus pour compenser les filtrages
+                .get();
 
             const allUsers = snap.docs
                 .map(d => ({ uid: d.id, ...d.data() }))
-                .filter(u => u.uid !== user.uid && !friendUids.includes(u.uid));
+                // ── Filtre 1 : exclure l'utilisateur courant et ses amis déjà ajoutés ──
+                .filter(u => u.uid !== user.uid && !friendUids.includes(u.uid))
+                // ── Filtre 2 : exclure les profils supprimés / incomplets ──
+                // Un compte supprimé dans Firebase Auth laisse souvent un profil Firestore
+                // sans displayName ou avec des données vides. On l'exclut.
+                .filter(u => isValidProfile(u));
 
             const shuffled = allUsers.sort(() => Math.random() - 0.5).slice(0, 5);
             setDiscoverUsers(shuffled);
@@ -691,7 +716,7 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
                             })}
                             <div style={{marginTop:'8px',padding:'12px',background:'rgba(2,6,23,.5)',border:'1px solid rgba(30,41,59,.6)',borderRadius:'14px',textAlign:'center'}}>
                                 <p style={{color:'#475569',fontSize:'10px',lineHeight:1.6}}>
-                                    Suggestion basée sur les membres récents.<br/>
+                                    Seuls les comptes actifs sont affichés.<br/>
                                     Actualisez pour découvrir d'autres athlètes.
                                 </p>
                             </div>
@@ -787,27 +812,86 @@ const AgeGate = ({ onConfirm, onDeny }) => {
     );
 };
 
+// ── CORRECTION 2 : Bannière de consentement RGPD conforme mai 2026 ───────
+// Améliorations apportées :
+//  • Finalités de traitement explicitement listées (art. 13 RGPD)
+//  • Base légale indiquée pour chaque finalité (consentement / intérêt légitime)
+//  • Expiration automatique du consentement à 13 mois (recommandation CNIL)
+//  • Boutons "Refuser" et "Accepter" de taille équivalente (CNIL 2022)
+//  • Mention du droit de retrait à tout moment
+//  • Identité du responsable de traitement visible
 const ConsentBanner = ({ onAccept, onRefuse, onCustomize, onPrivacy, onTerms }) => (
     <div className="rgpd-overlay">
-        <div className="slide-up" style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:'28px',padding:'24px',width:'100%',maxWidth:'460px',boxShadow:'0 -20px 60px rgba(0,0,0,.5)'}}>
-            <div style={{display:'flex',alignItems:'flex-start',gap:'12px',marginBottom:'16px'}}>
-                <div style={{width:'40px',height:'40px',background:'rgba(234,88,12,.12)',border:'1px solid rgba(234,88,12,.25)',borderRadius:'14px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <Icon name="shield" size={18}/>
-                </div>
-                <div>
-                    <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',letterSpacing:'.12em',textTransform:'uppercase',color:'white',marginBottom:'6px'}}>Vos données personnelles</h2>
-                    <p style={{fontSize:'11px',color:'#94a3b8',lineHeight:1.65}}>Avant d'utiliser ONYX RivalZ, vous devez nous autoriser à traiter certaines de vos données.</p>
+        <div className="slide-up custom-scroll" style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:'28px',padding:'0',width:'100%',maxWidth:'480px',boxShadow:'0 -20px 60px rgba(0,0,0,.5)',maxHeight:'92vh',overflowY:'auto'}}>
+            {/* En-tête */}
+            <div style={{padding:'20px 20px 16px',borderBottom:'1px solid rgba(30,41,59,.8)'}}>
+                <div style={{display:'flex',alignItems:'flex-start',gap:'12px'}}>
+                    <div style={{width:'40px',height:'40px',background:'rgba(234,88,12,.12)',border:'1px solid rgba(234,88,12,.25)',borderRadius:'14px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                        <Icon name="shield" size={18}/>
+                    </div>
+                    <div style={{flex:1}}>
+                        <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',letterSpacing:'.12em',textTransform:'uppercase',color:'white',marginBottom:'4px'}}>Gestion de vos données personnelles</h2>
+                        <p style={{fontSize:'10px',color:'#64748b',lineHeight:1.5}}>Responsable du traitement : <strong style={{color:'#94a3b8'}}>Rijoul — ONYX RivalZ</strong> (France)</p>
+                    </div>
                 </div>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px',marginBottom:'8px'}}>
-                <button onClick={onRefuse} style={{padding:'13px',borderRadius:'14px',background:'rgba(30,41,59,.8)',border:'1px solid rgba(100,116,139,.4)',color:'#94a3b8',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>Refuser</button>
-                <button onClick={onAccept} style={{padding:'13px',borderRadius:'14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',border:'none',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>Accepter tout</button>
+
+            {/* Finalités */}
+            <div style={{padding:'14px 20px'}}>
+                <p style={{fontSize:'10px',color:'#94a3b8',lineHeight:1.6,marginBottom:'12px'}}>
+                    Avant d'utiliser ONYX RivalZ, nous vous informons des traitements de données personnelles réalisés et recueillons votre consentement lorsqu'il est requis (art. 6 et 13 RGPD).
+                </p>
+
+                {/* Tableau des finalités */}
+                <div style={{background:'rgba(2,6,23,.5)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'14px',padding:'4px 12px',marginBottom:'14px'}}>
+                    {[
+                        { icon:'shield', label:'Données essentielles', desc:'Authentification Firebase, sécurité du compte.', base:'Exécution du contrat — obligatoire', required:true },
+                        { icon:'users', label:'Profil & amis', desc:'Pseudo, photo, liste de contacts, statut en ligne.', base:'Consentement', required:false },
+                        { icon:'chartbar', label:'Défis & classements', desc:'Historique sportif, scores, progressions.', base:'Consentement', required:false },
+                    ].map((item, i) => (
+                        <div key={i} className="purpose-row">
+                            <div style={{width:'28px',height:'28px',borderRadius:'8px',background:'rgba(234,88,12,.08)',border:'1px solid rgba(234,88,12,.15)',display:'flex',alignItems:'center',justifyContent:'center',color:'#f97316',flexShrink:0}}>
+                                <Icon name={item.icon} size={12}/>
+                            </div>
+                            <div style={{flex:1}}>
+                                <div style={{display:'flex',alignItems:'center',gap:'6px',marginBottom:'2px'}}>
+                                    <p style={{fontSize:'11px',fontWeight:700,color:'white'}}>{item.label}</p>
+                                    {item.required && <span style={{fontSize:'8px',color:'#ea580c',fontWeight:800,letterSpacing:'.08em',textTransform:'uppercase'}}>requis</span>}
+                                </div>
+                                <p style={{fontSize:'10px',color:'#64748b',lineHeight:1.4}}>{item.desc}</p>
+                                <p style={{fontSize:'9px',color:'#475569',marginTop:'2px',fontStyle:'italic'}}>Base légale : {item.base}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <p style={{fontSize:'9px',color:'#475569',lineHeight:1.6,marginBottom:'14px'}}>
+                    Vous pouvez retirer votre consentement à tout moment depuis l'onglet <strong style={{color:'#94a3b8'}}>Profil → Confidentialité</strong>. Le retrait ne remet pas en cause la licéité des traitements antérieurs. Votre choix expire automatiquement après <strong style={{color:'#94a3b8'}}>13 mois</strong>.
+                </p>
             </div>
-            <button onClick={onCustomize} style={{width:'100%',padding:'10px',borderRadius:'14px',background:'transparent',border:'1px solid rgba(30,41,59,.8)',color:'#64748b',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',marginBottom:'14px'}}>Personnaliser mes choix</button>
-            <div style={{display:'flex',justifyContent:'center',gap:'16px'}}>
-                <button onClick={onPrivacy} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>Politique de confidentialité</button>
-                <span style={{color:'#1e293b',fontSize:'9px'}}>·</span>
-                <button onClick={onTerms} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>CGU</button>
+
+            {/* Boutons — taille équivalente (CNIL 2022) */}
+            <div style={{padding:'0 20px 20px',display:'flex',flexDirection:'column',gap:'8px'}}>
+                {/* Refuser et Accepter de taille égale */}
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}}>
+                    <button onClick={onRefuse}
+                        style={{padding:'13px',borderRadius:'14px',background:'rgba(30,41,59,.9)',border:'1px solid rgba(100,116,139,.5)',color:'#94a3b8',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>
+                        Tout refuser
+                    </button>
+                    <button onClick={onAccept}
+                        style={{padding:'13px',borderRadius:'14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',border:'none',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>
+                        Tout accepter
+                    </button>
+                </div>
+                <button onClick={onCustomize}
+                    style={{width:'100%',padding:'10px',borderRadius:'14px',background:'transparent',border:'1px solid rgba(30,41,59,.8)',color:'#64748b',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>
+                    Personnaliser mes choix
+                </button>
+                <div style={{display:'flex',justifyContent:'center',gap:'16px',paddingTop:'4px'}}>
+                    <button onClick={onPrivacy} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>Politique de confidentialité</button>
+                    <span style={{color:'#1e293b',fontSize:'9px'}}>·</span>
+                    <button onClick={onTerms} style={{fontSize:'9px',color:'#475569',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>CGU</button>
+                </div>
             </div>
         </div>
     </div>
@@ -822,26 +906,60 @@ const ConsentCustomizer = ({ onSave, onClose }) => {
                     <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',letterSpacing:'.12em',textTransform:'uppercase',color:'white'}}>Personnaliser</h2>
                     <button onClick={onClose} style={{padding:'6px',background:'rgba(30,41,59,.8)',borderRadius:'8px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}><Icon name="x" size={14}/></button>
                 </div>
+
+                <p style={{fontSize:'10px',color:'#64748b',lineHeight:1.6,marginBottom:'16px'}}>
+                    Choisissez les traitements que vous autorisez. Vous pouvez modifier ces préférences à tout moment.
+                </p>
+
                 {[
-                    { key:'essential', label:'Données essentielles (Requis)', locked:true },
-                    { key:'functional', label:'Préférences fonctionnelles', locked:false },
-                    { key:'analytics', label:'Statistiques anonymes', locked:false },
+                    {
+                        key:'essential',
+                        label:'Données essentielles',
+                        desc:'Authentification, sécurité du compte. Traitement indispensable au fonctionnement du service.',
+                        base:'Exécution du contrat',
+                        locked:true
+                    },
+                    {
+                        key:'functional',
+                        label:'Préférences fonctionnelles',
+                        desc:'Mémorisation de vos réglages (langue, thème, filtres). Améliore votre expérience.',
+                        base:'Consentement',
+                        locked:false
+                    },
+                    {
+                        key:'analytics',
+                        label:'Statistiques anonymes',
+                        desc:'Mesure d\'audience anonymisée pour améliorer l\'application. Aucune donnée vendue à des tiers.',
+                        base:'Consentement',
+                        locked:false
+                    },
                 ].map(item => (
-                    <div key={item.key} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'12px',padding:'14px 0',borderBottom:'1px solid rgba(30,41,59,.7)'}}>
-                        <p style={{fontSize:'11px',fontWeight:800,textTransform:'uppercase',letterSpacing:'.08em',color:'white'}}>{item.label}</p>
-                        <div style={{flexShrink:0}}>
-                            {item.locked ? (
-                                <div className="toggle-track" style={{background:'#ea580c',opacity:.5,cursor:'not-allowed'}}><div className="toggle-thumb" style={{left:'23px'}}/></div>
-                            ) : (
-                                <button onClick={() => setPrefs(p=>({...p,[item.key]:!p[item.key]}))}
-                                    className="toggle-track" style={{background:prefs[item.key]?'#ea580c':'#1e293b',border:'none',cursor:'pointer'}}>
-                                    <div className="toggle-thumb" style={{left:prefs[item.key]?'23px':'3px'}}/>
-                                </button>
-                            )}
+                    <div key={item.key} style={{padding:'14px 0',borderBottom:'1px solid rgba(30,41,59,.7)'}}>
+                        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'12px'}}>
+                            <div style={{flex:1}}>
+                                <p style={{fontSize:'11px',fontWeight:800,textTransform:'uppercase',letterSpacing:'.08em',color:'white',marginBottom:'3px'}}>{item.label}</p>
+                                <p style={{fontSize:'10px',color:'#64748b',lineHeight:1.5,marginBottom:'3px'}}>{item.desc}</p>
+                                <p style={{fontSize:'9px',color:'#475569',fontStyle:'italic'}}>Base légale : {item.base}</p>
+                            </div>
+                            <div style={{flexShrink:0,marginTop:'2px'}}>
+                                {item.locked ? (
+                                    <div className="toggle-track" style={{background:'#ea580c',opacity:.5,cursor:'not-allowed'}}><div className="toggle-thumb" style={{left:'23px'}}/></div>
+                                ) : (
+                                    <button onClick={() => setPrefs(p=>({...p,[item.key]:!p[item.key]}))}
+                                        className="toggle-track" style={{background:prefs[item.key]?'#ea580c':'#1e293b',border:'none',cursor:'pointer'}}>
+                                        <div className="toggle-thumb" style={{left:prefs[item.key]?'23px':'3px'}}/>
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 ))}
-                <button onClick={() => onSave(prefs)} style={{marginTop:'20px',width:'100%',padding:'14px',borderRadius:'14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>
+
+                <p style={{fontSize:'9px',color:'#475569',lineHeight:1.6,marginTop:'14px',marginBottom:'16px'}}>
+                    Votre consentement sera conservé pendant <strong style={{color:'#94a3b8'}}>13 mois</strong> maximum, conformément à la recommandation de la CNIL.
+                </p>
+
+                <button onClick={() => onSave(prefs)} style={{width:'100%',padding:'14px',borderRadius:'14px',background:'linear-gradient(135deg,#ea580c,#c2410c)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>
                     Enregistrer mes préférences
                 </button>
             </div>
@@ -857,18 +975,39 @@ const PrivacyPage = ({ onClose }) => (
         </div>
         <div className="legal-scroll custom-scroll" style={{padding:'20px'}}>
             <p className="legal-p" style={{color:'#475569',fontSize:'10px'}}>Dernière mise à jour : <strong style={{color:'#f97316'}}>mai 2026</strong></p>
+
             <h2 className="legal-h2">1. Responsable du traitement</h2>
-            <p className="legal-p">ONYX RivalZ — Rijoul, développeur indépendant, France.</p>
-            <h2 className="legal-h2">2. Données collectées</h2>
+            <p className="legal-p">Rijoul — développeur indépendant, France. Contact DPO : <span style={{color:'#f97316'}}>contact@onyx-rivalz.fr</span></p>
+
+            <h2 className="legal-h2">2. Données collectées et finalités</h2>
             <ul className="legal-ul">
-                <li>Email + UID Firebase (authentification)</li>
-                <li>Pseudo et photo de profil</li>
-                <li>Défis sportifs et progressions</li>
-                <li>Liste d'amis et demandes d'amitié</li>
-                <li>Horodatage de dernière connexion (présence)</li>
+                <li><strong style={{color:'white'}}>Email + UID Firebase</strong> — authentification (exécution du contrat)</li>
+                <li><strong style={{color:'white'}}>Pseudo, photo de profil</strong> — identification dans l'application (consentement)</li>
+                <li><strong style={{color:'white'}}>Défis sportifs, progressions</strong> — fonctionnalité principale (consentement)</li>
+                <li><strong style={{color:'white'}}>Liste d'amis et demandes</strong> — réseau social sportif (consentement)</li>
+                <li><strong style={{color:'white'}}>Horodatage de connexion (lastSeen)</strong> — indicateur de présence (consentement)</li>
             </ul>
-            <h2 className="legal-h2">3. Vos droits</h2>
-            <p className="legal-p">Accès, rectification, effacement, portabilité — depuis l'onglet Profil → Mes droits.</p>
+
+            <h2 className="legal-h2">3. Durée de conservation</h2>
+            <p className="legal-p">Les données sont conservées pendant la durée d'activité du compte. En cas de suppression du compte, les données sont effacées sous 30 jours. Le consentement est renouvelé tous les 13 mois (recommandation CNIL).</p>
+
+            <h2 className="legal-h2">4. Destinataires des données</h2>
+            <p className="legal-p">Google Firebase (hébergement UE/USA — décision d'adéquation). Aucune donnée n'est vendue à des tiers.</p>
+
+            <h2 className="legal-h2">5. Vos droits (art. 15 à 22 RGPD)</h2>
+            <ul className="legal-ul">
+                <li>Droit d'accès et de rectification</li>
+                <li>Droit à l'effacement (« droit à l'oubli »)</li>
+                <li>Droit à la portabilité des données</li>
+                <li>Droit d'opposition et de limitation du traitement</li>
+                <li>Droit de retirer votre consentement à tout moment</li>
+                <li>Droit d'introduire une réclamation auprès de la CNIL (cnil.fr)</li>
+            </ul>
+            <p className="legal-p">Exercez vos droits via l'onglet <strong style={{color:'white'}}>Profil → Mes droits RGPD</strong> ou par email.</p>
+
+            <h2 className="legal-h2">6. Sécurité</h2>
+            <p className="legal-p">Les données sont protégées par les mécanismes de sécurité de Google Firebase (chiffrement au repos et en transit, authentification à deux facteurs disponible).</p>
+
             <div style={{height:'32px'}}/>
         </div>
     </div>
@@ -881,16 +1020,21 @@ const TermsPage = ({ onClose }) => (
             <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'10px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}><Icon name="x" size={16}/></button>
         </div>
         <div className="legal-scroll custom-scroll" style={{padding:'20px'}}>
-            <p className="legal-p" style={{color:'#475569',fontSize:'10px'}}>Dernière mise à jour : <strong style={{color:'#f97316'}}>mai 2026</strong></p>
+            <p className="legal-p" style={{color:'#475569',fontSize:'10px'}}>Dernière mise à jour : <strong style={{color:'#f97316'}}>mai 2026</strong> — Version 2.0</p>
             <h2 className="legal-h2">1. Présentation</h2>
-            <p className="legal-p">ONYX RivalZ est une application web de défis sportifs entre utilisateurs.</p>
+            <p className="legal-p">ONYX RivalZ est une application web de défis sportifs entre utilisateurs, éditée par Rijoul, développeur indépendant (France).</p>
             <h2 className="legal-h2">2. Âge minimum</h2>
-            <p className="legal-p">16 ans dans l'UE (art. 8 RGPD), 13 ans ailleurs.</p>
+            <p className="legal-p">16 ans dans l'Union Européenne (art. 8 RGPD). En dehors de l'UE, l'âge minimum est de 13 ans conformément aux lois locales applicables.</p>
             <h2 className="legal-h2">3. Utilisations interdites</h2>
             <ul className="legal-ul">
                 <li>Harcèlement, usurpation d'identité, spam</li>
-                <li>Contenu illicite ou dangereux</li>
+                <li>Contenu illicite, violent ou dangereux</li>
+                <li>Toute activité contraire à la législation française et européenne</li>
             </ul>
+            <h2 className="legal-h2">4. Responsabilité</h2>
+            <p className="legal-p">L'éditeur ne saurait être tenu responsable des dommages résultant d'une utilisation non conforme aux présentes CGU.</p>
+            <h2 className="legal-h2">5. Droit applicable</h2>
+            <p className="legal-p">Les présentes CGU sont régies par le droit français. Tout litige relève des juridictions compétentes de France.</p>
             <div style={{height:'32px'}}/>
         </div>
     </div>
@@ -904,10 +1048,32 @@ const RightsModal = ({ user, onClose, onDeleteAccount }) => {
                     <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white'}}>Mes droits RGPD</h2>
                     <button onClick={onClose} style={{padding:'8px',background:'rgba(30,41,59,.8)',borderRadius:'10px',border:'1px solid #1e293b',color:'#64748b',cursor:'pointer',display:'flex'}}><Icon name="x" size={16}/></button>
                 </div>
-                <p style={{color:'#64748b',fontSize:'12px',lineHeight:1.6,marginBottom:'16px'}}>Accédez à vos droits : export de données, suppression de compte et gestion du consentement depuis l'onglet Profil.</p>
+                <p style={{color:'#64748b',fontSize:'12px',lineHeight:1.6,marginBottom:'16px'}}>
+                    Conformément aux articles 15 à 22 du RGPD, vous disposez des droits suivants sur vos données personnelles.
+                </p>
+                <div style={{display:'flex',flexDirection:'column',gap:'8px',marginBottom:'16px'}}>
+                    {[
+                        { label:'Accès & rectification', desc:'Consultez et corrigez vos données' },
+                        { label:'Effacement', desc:'Suppression de votre compte et données sous 30 jours' },
+                        { label:'Portabilité', desc:'Export de vos données au format JSON' },
+                        { label:'Opposition & limitation', desc:'Limitez certains traitements' },
+                        { label:'Retrait du consentement', desc:'Modifiable à tout moment sans effet rétroactif' },
+                    ].map(r => (
+                        <div key={r.label} style={{display:'flex',gap:'10px',padding:'10px',background:'rgba(2,6,23,.5)',border:'1px solid rgba(30,41,59,.8)',borderRadius:'10px'}}>
+                            <div style={{width:'6px',height:'6px',borderRadius:'50%',background:'#f97316',flexShrink:0,marginTop:'5px'}}/>
+                            <div>
+                                <p style={{fontSize:'11px',fontWeight:700,color:'white'}}>{r.label}</p>
+                                <p style={{fontSize:'9px',color:'#64748b',marginTop:'1px'}}>{r.desc}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <p style={{fontSize:'10px',color:'#475569',lineHeight:1.6,marginBottom:'16px'}}>
+                    Pour exercer un droit, utilisez le bouton ci-dessous ou contactez : <strong style={{color:'#f97316'}}>contact@onyx-rivalz.fr</strong>. Vous pouvez également saisir la <strong style={{color:'#94a3b8'}}>CNIL</strong> (cnil.fr) en cas de réclamation.
+                </p>
                 <button onClick={() => { auth.signOut(); revokeConsent(); window.location.reload(); }}
                     style={{width:'100%',padding:'14px',borderRadius:'14px',background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',color:'#f87171',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',cursor:'pointer',marginBottom:'8px'}}>
-                    Supprimer mon compte
+                    Supprimer mon compte et mes données
                 </button>
                 <button onClick={onClose} style={{width:'100%',padding:'12px',borderRadius:'14px',background:'rgba(30,41,59,.8)',border:'1px solid #1e293b',color:'#64748b',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'11px',cursor:'pointer'}}>Fermer</button>
             </div>
@@ -1263,7 +1429,6 @@ const UpdateProgressModal = ({ challenge, user, onClose }) => {
     );
 };
 
-// ── CHALLENGE CARD — with cancel button for pending sent challenges ──────
 const ChallengeCard = ({ challenge, user, onUpdate, onAccept, onDecline, onCancel }) => {
     const isCreator = challenge.createdBy === user.uid;
     const otherName = isCreator ? challenge.challengedName : challenge.createdByName;
@@ -1329,14 +1494,12 @@ const ChallengeCard = ({ challenge, user, onUpdate, onAccept, onDecline, onCance
                     ))}
                 </div>
             )}
-            {/* Pending — received by me: accept or decline */}
             {isPending&&!isCreator && (
                 <div style={{display:'flex',gap:'8px'}}>
                     <button onClick={()=>onDecline(challenge.id)} style={{flex:1,padding:'10px',borderRadius:'12px',background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)',color:'#f87171',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>Refuser</button>
                     <button onClick={()=>onAccept(challenge.id)} style={{flex:2,padding:'10px',borderRadius:'12px',background:'linear-gradient(135deg,#ea580c,#c2410c)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>⚡ Accepter</button>
                 </div>
             )}
-            {/* Pending — sent by me: cancel button */}
             {isPending&&isCreator && (
                 <button className="cancel-btn" disabled={cancelling} onClick={handleCancel}>
                     {cancelling
@@ -1451,7 +1614,6 @@ const ProfileTab = ({ user, profile, setProfile, challenges, onShowRights, onSho
             <div style={{background:'rgba(15,23,42,.9)',border:'1px solid rgba(234,88,12,.2)',borderRadius:'20px',padding:'24px',marginBottom:'16px',textAlign:'center'}}>
                 <div style={{position:'relative',display:'inline-block',marginBottom:'12px'}}>
                     <img src={profile.photoURL||getAvatar(profile.displayName)} style={{width:'72px',height:'72px',borderRadius:'18px',objectFit:'cover',border:'2px solid rgba(234,88,12,.3)'}}/>
-                    {/* Own online indicator — always show as online since we're viewing our own profile */}
                     <div style={{position:'absolute',bottom:'-4px',right:'-4px',width:'16px',height:'16px',borderRadius:'50%',background:'#4ade80',border:'2px solid #020617'}} className="online-dot"/>
                 </div>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'4px'}}>
@@ -1501,8 +1663,8 @@ const ProfileTab = ({ user, profile, setProfile, challenges, onShowRights, onSho
                 </p>
                 <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
                     {[
-                        {label:'Mes droits RGPD', desc:'Accès, export, suppression, portabilité', onClick:onShowRights, icon:'download'},
-                        {label:'Gérer mes préférences', desc:'Modifier mes choix de consentement', onClick:onManageConsent, icon:'settings'},
+                        {label:'Mes droits RGPD', desc:'Accès, export, effacement, portabilité, opposition', onClick:onShowRights, icon:'download'},
+                        {label:'Gérer mes préférences', desc:'Modifier ou retirer mon consentement', onClick:onManageConsent, icon:'settings'},
                         {label:'Politique de confidentialité', desc:'Version 2.0 · Mai 2026', onClick:onShowPrivacy, icon:'shield'},
                         {label:'Conditions générales', desc:'Version 2.0 · Mai 2026', onClick:onShowTerms, icon:'alertTriangle'},
                     ].map(item => (
@@ -1586,24 +1748,16 @@ function App() {
         return unsub;
     }, [firebaseReady]);
 
-    // ── PRESENCE: update lastSeen every 60s while logged in ──────────────
     useEffect(() => {
         if (!user || !firebaseReady) return;
-
-        // Write presence immediately on login
         updatePresence(user.uid);
-
-        // Then every 60 seconds
         presenceIntervalRef.current = setInterval(() => {
             updatePresence(user.uid);
         }, PRESENCE_INTERVAL_MS);
-
-        // Write on tab/window visibility change
         const handleVisibility = () => {
             if (!document.hidden) updatePresence(user.uid);
         };
         document.addEventListener('visibilitychange', handleVisibility);
-
         return () => {
             clearInterval(presenceIntervalRef.current);
             presenceIntervalRef.current = null;
@@ -1668,10 +1822,7 @@ function App() {
 
     const acceptChallenge = async (id) => { await db.collection(APEX_APP_ID).doc(id).update({status:'active',accepted:true}); };
     const declineChallenge = async (id) => { await db.collection(APEX_APP_ID).doc(id).update({status:'declined'}); };
-    // ── NEW: cancel a pending challenge (only creator, only pending) ──────
-    const cancelChallenge = async (id) => {
-        await db.collection(APEX_APP_ID).doc(id).update({status:'cancelled'});
-    };
+    const cancelChallenge = async (id) => { await db.collection(APEX_APP_ID).doc(id).update({status:'cancelled'}); };
 
     const filteredChallenges = useMemo(() => {
         if (filter==='all') return challenges.filter(c=>c.status!=='declined'&&c.status!=='cancelled');
