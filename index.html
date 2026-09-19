@@ -257,6 +257,40 @@
         }
         .auth-btn:hover::after { animation: glassSweep 1.1s var(--ease-out); }
 
+        /* Bascule Défis / Entraînements */
+        .segmented {
+            display: flex; padding: 4px; border-radius: 18px;
+            background: var(--glass); border: 1px solid var(--glass-line);
+            backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+            margin-bottom: 16px;
+        }
+        .segmented-item {
+            flex: 1; padding: 9px 4px; border-radius: 14px; border: none; cursor: pointer;
+            background: transparent; color: rgba(235,235,245,.58); font-weight: 650; font-size: 12px;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            transition: transform .4s var(--spring), background .3s, color .3s;
+        }
+        .segmented-item.active {
+            background: linear-gradient(180deg, rgba(255,122,0,.32), rgba(255,122,0,.14));
+            color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 4px 14px -6px var(--accent-glow);
+        }
+
+        /* Carte d'objectif hebdomadaire (anneau) */
+        .goal-ring-card {
+            display: flex; align-items: center; gap: 16px; padding: 16px 18px; margin-bottom: 16px;
+            border-radius: var(--r-md); background: var(--glass); border: 1px solid var(--glass-line);
+            backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+            box-shadow: inset 0 1px 0 var(--glass-spec); cursor: pointer;
+        }
+
+        /* Séance solo */
+        .solo-card {
+            background: var(--glass); border: 1px solid var(--glass-line); border-radius: var(--r-md);
+            backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+            box-shadow: inset 0 1px 0 var(--glass-spec);
+            padding: 14px; display: flex; align-items: center; gap: 12px;
+        }
+
         .tab-pill {
             padding: 9px 17px; border-radius: 99px; font-weight: 650; font-size: 12px;
             letter-spacing: .01em; cursor: pointer; border: 1px solid transparent;
@@ -912,6 +946,7 @@ const BADGES = [
     { id:'streak_3',        emoji:'🔥', label:'Sur sa lancée',     desc:'3 jours d\'activité consécutifs',          check:s => s.streak >= 3 },
     { id:'streak_7',        emoji:'🚀', label:'Semaine parfaite',  desc:'7 jours d\'activité consécutifs',          check:s => s.streak >= 7 },
     { id:'rival_5',         emoji:'🤝', label:'Réseau RivalZ',     desc:'Avoir 5 amis',                            check:s => s.friendCount >= 5 },
+    { id:'solo_10',         emoji:'🏋️', label:'Discipline',        desc:'Enregistrer 10 séances solo',              check:s => s.soloCount >= 10 },
 ];
 
 // Confettis en CSS pur : une poignée de barrettes colorées qui tombent
@@ -977,6 +1012,126 @@ const ActivityHeatmap = ({ activityDates }) => {
                 ))}
             </div>
             <p style={{fontSize:'10px',color:'rgba(235,235,245,.4)',marginTop:'8px'}}>10 dernières semaines · une case = un jour avec une progression enregistrée</p>
+        </div>
+    );
+};
+
+// ── Entraînement solo ────────────────────────────────────────────────────
+// Journal privé de séances sans adversaire : artifacts/{appId}/users/{uid}/workouts
+// (lecture/écriture réservées au propriétaire — même schéma que la liste
+// de contacts, aucun champ partagé).
+const SoloSessionModal = ({ user, onClose, onSaved }) => {
+    const [sport, setSport] = useState(SPORT_LIST[0]?.id || '');
+    const [value, setValue] = useState('');
+    const [notes, setNotes] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    const selectedSport = SPORT_LIST.find(s => s.id === sport);
+
+    const handleSave = async () => {
+        const num = Number(value);
+        if (!sport || !Number.isFinite(num) || num <= 0) { notify('Entrez une valeur valide.', 'error'); return; }
+        setSaving(true);
+        try {
+            await db.collection('artifacts').doc(ONYX_APP_ID)
+                .collection('users').doc(user.uid).collection('workouts').add({
+                    sport, value: num, unit: selectedSport?.unit || 'pts',
+                    notes: notes.trim(),
+                    createdAt: window.firebase.firestore.FieldValue.serverTimestamp(),
+                });
+            notify('Séance enregistrée.', 'success');
+            onSaved?.(); onClose();
+        } catch (e) { notify(errorMessage(e), 'error'); setSaving(false); }
+    };
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-sheet" style={{padding:'24px',borderRadius:'34px'}} onClick={e=>e.stopPropagation()}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'20px'}}>
+                    <div>
+                        <p style={{color:'#FF7A00',fontSize:'9px',fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase'}}>Entraînement solo</p>
+                        <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginTop:'2px'}}>Nouvelle séance</h3>
+                    </div>
+                    <button onClick={onClose} style={{padding:'8px',background:'rgba(255,255,255,.12)',borderRadius:'18px',border:'1px solid rgba(255,255,255,.12)',color:'rgba(235,235,245,.58)',cursor:'pointer',display:'flex'}}><Icon name="x" size={16}/></button>
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'8px',marginBottom:'18px'}}>
+                    {SPORT_LIST.map(s => (
+                        <button key={s.id} onClick={()=>setSport(s.id)}
+                            style={{padding:'10px 4px',borderRadius:'16px',border:`1px solid ${sport===s.id?'rgba(255,122,0,.5)':'rgba(255,255,255,.12)'}`,background:sport===s.id?'rgba(255,122,0,.14)':'rgba(255,255,255,.05)',cursor:'pointer',textAlign:'center'}}>
+                            <div className="emoji-native" style={{fontSize:'18px'}}>{SPORT_ICONS[s.id]}</div>
+                            <p style={{fontSize:'8px',fontWeight:700,color:sport===s.id?'#FF9F0A':'rgba(235,235,245,.58)',marginTop:'4px',textTransform:'uppercase'}}>{s.label}</p>
+                        </button>
+                    ))}
+                </div>
+                <div style={{textAlign:'center',marginBottom:'18px'}}>
+                    <div style={{display:'flex',alignItems:'baseline',justifyContent:'center',gap:'6px'}}>
+                        <input type="number" min="0" autoFocus
+                            style={{background:'transparent',border:'none',fontSize:'44px',fontFamily:'Syne,sans-serif',fontWeight:800,color:'#FF9F0A',textAlign:'center',width:'160px'}}
+                            value={value} onChange={e=>setValue(e.target.value)} placeholder="0"/>
+                        <span style={{color:'rgba(235,235,245,.58)',fontSize:'14px',fontWeight:600}}>{selectedSport?.unit || 'pts'}</span>
+                    </div>
+                </div>
+                <textarea className="input-glow" rows="2" placeholder="Notes (facultatif)"
+                    style={{width:'100%',background:'rgba(255,255,255,.055)',border:'1px solid rgba(255,255,255,.12)',borderRadius:'18px',padding:'12px 14px',fontSize:'13px',marginBottom:'18px',fontFamily:'DM Sans,sans-serif'}}
+                    value={notes} onChange={e=>setNotes(e.target.value)}/>
+                <button disabled={saving} onClick={handleSave}
+                    style={{width:'100%',padding:'14px',borderRadius:'20px',background:'linear-gradient(135deg,#FF7A00,#F2570A)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
+                    {saving ? <><div style={{width:'14px',height:'14px',border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .7s linear infinite'}}/> Enregistrement...</> : '✓ Enregistrer la séance'}
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const SoloSessionCard = ({ session, onDelete }) => {
+    const [deleting, setDeleting] = useState(false);
+    const handleDelete = async () => { setDeleting(true); try { await onDelete(session.id); } finally { setDeleting(false); } };
+    return (
+        <div className="solo-card fade-in">
+            <div style={{width:'40px',height:'40px',borderRadius:'14px',background:'rgba(255,122,0,.14)',border:'1px solid rgba(255,122,0,.25)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'19px',flexShrink:0}} className="emoji-native">
+                {SPORT_ICONS[session.sport]||'🎯'}
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+                <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'15px',color:'white'}}>{session.value} <span style={{fontSize:'11px',color:'#FF9F0A',fontWeight:700}}>{session.unit}</span></p>
+                <p style={{fontSize:'10px',color:'rgba(235,235,245,.58)',marginTop:'2px'}}>
+                    {formatDate(session.createdAt)}{session.notes ? ` · ${session.notes}` : ''}
+                </p>
+            </div>
+            <button className="delete-btn" disabled={deleting} onClick={handleDelete} title="Supprimer">
+                {deleting ? <div style={{width:'12px',height:'12px',border:'2px solid rgba(255,69,58,.3)',borderTopColor:'#FF453A',borderRadius:'50%',animation:'spin .7s linear infinite'}}/> : <Icon name="trash" size={13}/>}
+            </button>
+        </div>
+    );
+};
+
+// ── Objectif hebdomadaire ────────────────────────────────────────────────
+// Nombre de jours actifs visés par semaine — le même principe que
+// l'anneau "Se lever/Bouger/S'entraîner" des apps fitness, mais réduit à
+// un seul anneau pour rester lisible sur ce site.
+const WeeklyGoalModal = ({ current, onClose, onSave }) => {
+    const [target, setTarget] = useState(current || 4);
+    const [saving, setSaving] = useState(false);
+    const handleSave = async () => { setSaving(true); await onSave(target); setSaving(false); onClose(); };
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-sheet" style={{padding:'24px',borderRadius:'34px'}} onClick={e=>e.stopPropagation()}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'20px'}}>
+                    <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white'}}>Objectif hebdomadaire</h3>
+                    <button onClick={onClose} style={{padding:'8px',background:'rgba(255,255,255,.12)',borderRadius:'18px',border:'1px solid rgba(255,255,255,.12)',color:'rgba(235,235,245,.58)',cursor:'pointer',display:'flex'}}><Icon name="x" size={16}/></button>
+                </div>
+                <p style={{color:'rgba(235,235,245,.58)',fontSize:'12px',marginBottom:'18px',lineHeight:1.6}}>Nombre de jours d'activité (défi ou séance solo) que vous visez chaque semaine.</p>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'24px',marginBottom:'22px'}}>
+                    <button onClick={()=>setTarget(t=>Math.max(1,t-1))}
+                        style={{width:'44px',height:'44px',borderRadius:'16px',background:'rgba(255,255,255,.09)',border:'1px solid rgba(255,255,255,.14)',color:'white',fontSize:'20px',cursor:'pointer'}}>−</button>
+                    <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'40px',color:'#FF9F0A',minWidth:'56px',textAlign:'center'}}>{target}</p>
+                    <button onClick={()=>setTarget(t=>Math.min(7,t+1))}
+                        style={{width:'44px',height:'44px',borderRadius:'16px',background:'rgba(255,255,255,.09)',border:'1px solid rgba(255,255,255,.14)',color:'white',fontSize:'20px',cursor:'pointer'}}>+</button>
+                </div>
+                <button disabled={saving} onClick={handleSave}
+                    style={{width:'100%',padding:'14px',borderRadius:'20px',background:'linear-gradient(135deg,#FF7A00,#F2570A)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>
+                    Enregistrer
+                </button>
+            </div>
         </div>
     );
 };
@@ -2815,6 +2970,10 @@ function App() {
     const [filter, setFilter] = useState('all');
     const [friendRequestCount, setFriendRequestCount] = useState(0);
     const [badgeQueue, setBadgeQueue] = useState([]);
+    const [homeView, setHomeView] = useState('challenges');
+    const [soloSessions, setSoloSessions] = useState([]);
+    const [showSoloModal, setShowSoloModal] = useState(false);
+    const [showGoalModal, setShowGoalModal] = useState(false);
     const presenceIntervalRef = useRef(null);
 
     useEffect(() => {
@@ -2914,6 +3073,33 @@ function App() {
         return ()=>{ unsub(); unsub2(); };
     },[user,firebaseReady]);
 
+    useEffect(() => {
+        if (!user||!firebaseReady) return;
+        const unsub = db.collection('artifacts').doc(ONYX_APP_ID)
+            .collection('users').doc(user.uid).collection('workouts')
+            .orderBy('createdAt','desc').limit(60)
+            .onSnapshot(snap => setSoloSessions(snap.docs.map(d=>({id:d.id,...d.data()}))),
+                        () => setSoloSessions([]));
+        return unsub;
+    },[user,firebaseReady]);
+
+    const deleteSoloSession = async (id) => {
+        try {
+            await db.collection('artifacts').doc(ONYX_APP_ID)
+                .collection('users').doc(user.uid).collection('workouts').doc(id).delete();
+            notify('Séance supprimée.', 'info');
+        } catch (e) { notify(errorMessage(e), 'error'); }
+    };
+
+    const saveWeeklyGoal = async (target) => {
+        try {
+            await db.collection('artifacts').doc(ONYX_APP_ID)
+                .collection('public').doc('data').collection('profiles').doc(user.uid)
+                .update({ weeklyGoal: target });
+            setProfile(p => ({ ...p, weeklyGoal: target }));
+        } catch (e) { notify(errorMessage(e), 'error'); }
+    };
+
     // Jours où l'utilisateur a lui-même enregistré une progression —
     // base du calendrier d'activité et de la série de jours consécutifs.
     const myActivityDates = useMemo(() => {
@@ -2923,8 +3109,24 @@ function App() {
             if (h.uid !== user.uid || !h.at) return;
             set.add(new Date(h.at).toISOString().slice(0,10));
         }));
+        soloSessions.forEach(s => {
+            if (!s.createdAt) return;
+            const d = s.createdAt.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
+            set.add(d.toISOString().slice(0,10));
+        });
         return set;
-    }, [challenges, user]);
+    }, [challenges, soloSessions, user]);
+
+    // Jours actifs sur la semaine glissante en cours (pour l'anneau d'objectif).
+    const activeDaysThisWeek = useMemo(() => {
+        let n = 0;
+        for (let i = 0; i < 7; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            if (myActivityDates.has(d.toISOString().slice(0,10))) n++;
+        }
+        return n;
+    }, [myActivityDates]);
 
     const streak = useMemo(() => {
         if (myActivityDates.size === 0) return 0;
@@ -2949,8 +3151,14 @@ function App() {
                 map[c.sport] = { value: mine, unit: c.unit };
             }
         });
+        soloSessions.forEach(s => {
+            if (!s.value || s.value <= 0) return;
+            if (!map[s.sport] || s.value > map[s.sport].value) {
+                map[s.sport] = { value: s.value, unit: s.unit };
+            }
+        });
         return map;
-    }, [challenges, user]);
+    }, [challenges, soloSessions, user]);
 
     const badgeStats = useMemo(() => {
         if (!user) return null;
@@ -2958,9 +3166,9 @@ function App() {
         return {
             totalChallenges: mine.length,
             wins: mine.filter(c=>c.status==='completed'&&c.winner===user.uid).length,
-            streak, friendCount: friends.length,
+            streak, friendCount: friends.length, soloCount: soloSessions.length,
         };
-    }, [challenges, user, streak, friends]);
+    }, [challenges, user, streak, friends, soloSessions]);
 
     // Détecte les succès nouvellement atteints, les enregistre sur le
     // profil (pour ne pas re-célébrer à chaque rechargement) et les met
@@ -3153,6 +3361,39 @@ function App() {
                                                 </div>
                                             ))}
                                         </div>
+
+                                        {(() => {
+                                            const goal = profile.weeklyGoal || 4;
+                                            const pct = Math.min(100, Math.round((activeDaysThisWeek/goal)*100));
+                                            const dash = 176; // 2 * PI * r(28)
+                                            return (
+                                                <div className="goal-ring-card" onClick={()=>setShowGoalModal(true)}>
+                                                    <svg className="ring-svg" width="64" height="64" viewBox="0 0 64 64">
+                                                        <circle className="ring-track" cx="32" cy="32" r="28"/>
+                                                        <circle className="ring-fill" cx="32" cy="32" r="28"
+                                                            stroke={activeDaysThisWeek>=goal?'#30D158':'#FF7A00'}
+                                                            style={{'--ring-dash':dash,'--ring-offset':dash-(dash*pct/100)}}/>
+                                                    </svg>
+                                                    <div style={{flex:1}}>
+                                                        <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'14px',color:'white'}}>Objectif de la semaine</p>
+                                                        <p style={{fontSize:'11px',color:'rgba(235,235,245,.58)',marginTop:'2px'}}>{activeDaysThisWeek} / {goal} jour{goal!==1?'s':''} actif{goal!==1?'s':''}</p>
+                                                    </div>
+                                                    <Icon name="settings" size={15} style={{color:'rgba(235,235,245,.4)',flexShrink:0}}/>
+                                                </div>
+                                            );
+                                        })()}
+
+                                        <div className="segmented">
+                                            <button className={`segmented-item ${homeView==='challenges'?'active':''}`} onClick={()=>setHomeView('challenges')}>
+                                                <Icon name="target" size={13}/>Défis
+                                            </button>
+                                            <button className={`segmented-item ${homeView==='solo'?'active':''}`} onClick={()=>setHomeView('solo')}>
+                                                <Icon name="flame" size={13}/>Entraînements
+                                            </button>
+                                        </div>
+
+                                        {homeView==='challenges' && (
+                                        <>
                                         <div style={{display:'flex',gap:'6px',marginBottom:'16px',overflowX:'auto',paddingBottom:'4px'}}>
                                             {[{id:'all',label:'Tous'},{id:'pending',label:'En attente',count:challenges.filter(c=>c.status==='pending').length},{id:'active',label:'En cours'},{id:'completed',label:'Terminés'}].map(f => (
                                                 <button key={f.id} onClick={()=>setFilter(f.id)}
@@ -3179,6 +3420,30 @@ function App() {
                                                     onUpdate={setUpdateTarget} onAccept={acceptChallenge} onDecline={declineChallenge}
                                                     onCancel={cancelChallenge} onRematch={rematchChallenge}/>
                                             ))
+                                        )}
+                                        </>
+                                        )}
+
+                                        {homeView==='solo' && (
+                                        <>
+                                        <button onClick={()=>setShowSoloModal(true)}
+                                            style={{width:'100%',padding:'13px',borderRadius:'20px',background:'linear-gradient(135deg,#FF7A00,#F2570A)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'16px'}}>
+                                            <Icon name="plus" size={14}/>Enregistrer une séance
+                                        </button>
+                                        {soloSessions.length===0 ? (
+                                            <div style={{textAlign:'center',padding:'48px 16px'}}>
+                                                <div style={{fontSize:'48px',marginBottom:'12px'}} className="emoji-native">🏋️</div>
+                                                <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginBottom:'8px'}}>Aucun entraînement solo</h3>
+                                                <p style={{color:'rgba(235,235,245,.58)',fontSize:'12px'}}>Enregistrez vos séances même sans adversaire : elles comptent pour votre série et vos records.</p>
+                                            </div>
+                                        ) : (
+                                            <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+                                                {soloSessions.map(s => (
+                                                    <SoloSessionCard key={s.id} session={s} onDelete={deleteSoloSession}/>
+                                                ))}
+                                            </div>
+                                        )}
+                                        </>
                                         )}
                                     </div>
                                 )}
@@ -3235,6 +3500,8 @@ function App() {
 
                             {showCreate && <CreateChallengeModal user={user} profile={profile} friends={friends} friendProfiles={friendProfiles} onClose={()=>setShowCreate(false)}/>}
                             {updateTarget && <UpdateProgressModal challenge={updateTarget} user={user} onClose={()=>setUpdateTarget(null)}/>}
+                            {showSoloModal && <SoloSessionModal user={user} onClose={()=>setShowSoloModal(false)}/>}
+                            {showGoalModal && <WeeklyGoalModal current={profile.weeklyGoal||4} onClose={()=>setShowGoalModal(false)} onSave={saveWeeklyGoal}/>}
                         </>
                     )}
                 </div>
