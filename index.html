@@ -866,6 +866,123 @@ const SPORT_LIST = [
     { id:'custom', label:'Autre', unit:'pts' },
 ];
 
+// ── Calories (estimation) ────────────────────────────────────────────────
+// Table de conversion approximative « valeur loggée → kcal », pensée pour
+// rester lisible plutôt que médicalement précise (pas de poids/âge saisis).
+const SPORT_KCAL_PER_UNIT = {
+    running: 62, cycling: 28, swimming: 0.09, walking: 42, hiking: 58,
+    pushups: 0.32, pullups: 1.1, situps: 0.2, squats: 0.32, burpees: 0.9,
+    plank: 0.08, basketball: 6, tennis: 90, football: 45, jumping: 0.28,
+    custom: 0.4,
+};
+const estimateCalories = (sport, value) => {
+    const rate = SPORT_KCAL_PER_UNIT[sport] ?? 0.4;
+    const num = Number(value) || 0;
+    return Math.max(0, Math.round(num * rate));
+};
+
+// ── Bibliothèque d'exercices ─────────────────────────────────────────────
+// Fiches courtes : technique + à quoi sert la mesure enregistrée.
+const EXERCISE_LIBRARY = [
+    { id:'running',   group:'Cardio',      tips:'Foulée courte, regard loin devant, respiration régulière sur 3-4 appuis.' },
+    { id:'walking',   group:'Cardio',      tips:'Marche active : bras qui balancent, allure soutenue mais tenable longtemps.' },
+    { id:'hiking',    group:'Cardio',      tips:'Bâtons en descente pour les genoux, hydratation régulière sur les dénivelés.' },
+    { id:'cycling',   group:'Cardio',      tips:'Cadence de pédalage régulière (~80-90 rpm), genoux alignés avec la roue.' },
+    { id:'swimming',  group:'Cardio',      tips:'Respiration bilatérale, corps horizontal, appui sur l\'avant-bras à chaque traction.' },
+    { id:'jumping',   group:'Cardio',      tips:'Corde à sauter ou jumping jacks : atterrissage souple, genoux légèrement fléchis.' },
+    { id:'pushups',   group:'Force',       tips:'Corps gainé de la tête aux talons, coudes à 45°, amplitude complète.' },
+    { id:'pullups',   group:'Force',       tips:'Épaules basses, tirez la poitrine vers la barre, descente contrôlée.' },
+    { id:'squats',    group:'Force',       tips:'Dos droit, genoux dans l\'axe des pieds, descendez jusqu\'aux cuisses parallèles au sol.' },
+    { id:'situps',    group:'Force',       tips:'Pieds ancrés ou libres, montée contrôlée sans tirer sur la nuque.' },
+    { id:'burpees',   group:'Force',       tips:'Squat → planche → pompe → saut : enchaînez sans casser le rythme.' },
+    { id:'plank',     group:'Gainage',     tips:'Ligne droite épaules-hanches-chevilles, abdos et fessiers contractés.' },
+    { id:'basketball',group:'Sport co.',   tips:'Enregistrez vos points marqués sur un match ou une séance de tirs.' },
+    { id:'football',  group:'Sport co.',   tips:'Enregistrez vos buts marqués sur un match ou un entraînement.' },
+    { id:'tennis',    group:'Raquette',    tips:'Enregistrez le nombre de sets joués, gagnés ou non.' },
+    { id:'custom',    group:'Autre',       tips:'Pour tout ce qui ne rentre pas dans les cases ci-dessus.' },
+];
+
+// ── Programmes d'entraînement structurés ─────────────────────────────────
+// Suites d'exercices guidées, avec objectif et repos entre chaque étape.
+// Chaque étape complétée journalise automatiquement une séance solo.
+const WORKOUT_PROGRAMS = [
+    {
+        id: 'fullbody_debutant', emoji: '🌱', label: 'Full Body Débutant', level: 'Débutant', minutes: 12,
+        desc: "Un enchaînement complet au poids du corps pour découvrir le renforcement musculaire.",
+        exercises: [
+            { sport: 'squats',  target: 15, unit: 'reps', restSec: 30 },
+            { sport: 'pushups', target: 8,  unit: 'reps', restSec: 30 },
+            { sport: 'plank',   target: 25, unit: 'sec',  restSec: 30, isDuration: true },
+            { sport: 'situps',  target: 15, unit: 'reps', restSec: 30 },
+            { sport: 'jumping', target: 20, unit: 'reps', restSec: 0 },
+        ],
+    },
+    {
+        id: 'hiit_cardio', emoji: '🔥', label: 'HIIT Cardio Éclair', level: 'Intermédiaire', minutes: 15,
+        desc: "Circuit haute intensité pour faire monter le rythme cardiaque en un minimum de temps.",
+        exercises: [
+            { sport: 'jumping', target: 30, unit: 'reps', restSec: 20 },
+            { sport: 'burpees', target: 12, unit: 'reps', restSec: 25 },
+            { sport: 'squats',  target: 25, unit: 'reps', restSec: 20 },
+            { sport: 'burpees', target: 12, unit: 'reps', restSec: 25 },
+            { sport: 'plank',   target: 40, unit: 'sec',  restSec: 0, isDuration: true },
+        ],
+    },
+    {
+        id: 'force_haut', emoji: '💪', label: 'Force — Haut du Corps', level: 'Intermédiaire', minutes: 14,
+        desc: "Cible les bras, épaules et le dos avec des séries plus longues et un repos plus généreux.",
+        exercises: [
+            { sport: 'pushups', target: 15, unit: 'reps', restSec: 40 },
+            { sport: 'pullups', target: 6,  unit: 'reps', restSec: 45 },
+            { sport: 'pushups', target: 12, unit: 'reps', restSec: 40 },
+            { sport: 'pullups', target: 5,  unit: 'reps', restSec: 45 },
+            { sport: 'plank',   target: 35, unit: 'sec',  restSec: 0, isDuration: true },
+        ],
+    },
+    {
+        id: 'cardio_endurance', emoji: '🏃', label: 'Endurance Cardio', level: 'Tous niveaux', minutes: 20,
+        desc: "Basé sur la distance : idéal en extérieur pour construire son endurance sur la durée.",
+        exercises: [
+            { sport: 'running', target: 2,  unit: 'km',  restSec: 60 },
+            { sport: 'squats',  target: 15, unit: 'reps', restSec: 30 },
+            { sport: 'running', target: 1,  unit: 'km',  restSec: 0 },
+        ],
+    },
+];
+
+// ── Niveaux & XP ──────────────────────────────────────────────────────────
+// XP entièrement dérivée des données déjà stockées (aucune écriture
+// supplémentaire nécessaire) : défis, séances solo, série, succès, programmes.
+const LEVEL_TITLES = [
+    'Débutant', 'Amateur', 'Régulier', 'Sérieux', 'Compétiteur',
+    'Athlète', 'Vétéran', 'Élite', 'Champion', 'Légende', 'Icône RivalZ',
+];
+const LEVEL_THRESHOLDS = [0, 80, 200, 380, 620, 920, 1300, 1750, 2300, 3000, 4000];
+const computeXp = (stats) => {
+    if (!stats) return 0;
+    return Math.round(
+        stats.wins * 60 +
+        Math.max(0, stats.totalChallenges - stats.wins) * 15 +
+        stats.soloCount * 10 +
+        stats.streak * 3 +
+        (stats.programsCompleted || 0) * 45 +
+        (stats.unlockedBadgesCount || 0) * 20 +
+        (stats.varietyCount || 0) * 8
+    );
+};
+const getLevelInfo = (xp) => {
+    let idx = 0;
+    for (let i = 0; i < LEVEL_THRESHOLDS.length; i++) { if (xp >= LEVEL_THRESHOLDS[i]) idx = i; }
+    const floor = LEVEL_THRESHOLDS[idx];
+    const ceil = LEVEL_THRESHOLDS[idx + 1] ?? (floor + 1000);
+    const pct = idx >= LEVEL_THRESHOLDS.length - 1 ? 100 : Math.round(((xp - floor) / (ceil - floor)) * 100);
+    return {
+        level: idx + 1, title: LEVEL_TITLES[idx] || LEVEL_TITLES[LEVEL_TITLES.length - 1],
+        xp, floor, ceil, pct: Math.max(0, Math.min(100, pct)),
+        isMax: idx >= LEVEL_THRESHOLDS.length - 1,
+    };
+};
+
 // ── Notifications éphémères ──────────────────────────────────────────────
 // Avant, chaque échec Firestore partait dans console.error : l'utilisateur
 // voyait un bouton tourner puis plus rien. Tout passe maintenant par ici.
@@ -947,6 +1064,15 @@ const BADGES = [
     { id:'streak_7',        emoji:'🚀', label:'Semaine parfaite',  desc:'7 jours d\'activité consécutifs',          check:s => s.streak >= 7 },
     { id:'rival_5',         emoji:'🤝', label:'Réseau RivalZ',     desc:'Avoir 5 amis',                            check:s => s.friendCount >= 5 },
     { id:'solo_10',         emoji:'🏋️', label:'Discipline',        desc:'Enregistrer 10 séances solo',              check:s => s.soloCount >= 10 },
+    { id:'solo_50',         emoji:'🎖️', label:'Machine à séances', desc:'Enregistrer 50 séances solo',              check:s => s.soloCount >= 50 },
+    { id:'streak_30',       emoji:'🌋', label:'Mois parfait',      desc:'30 jours d\'activité consécutifs',         check:s => s.streak >= 30 },
+    { id:'calories_1000',   emoji:'🔋', label:'1000 kcal',         desc:'Brûler 1000 kcal cumulées (estimation)',   check:s => s.totalCalories >= 1000 },
+    { id:'calories_5000',   emoji:'⚡', label:'5000 kcal',         desc:'Brûler 5000 kcal cumulées (estimation)',   check:s => s.totalCalories >= 5000 },
+    { id:'program_1',       emoji:'📋', label:'Premier programme', desc:'Terminer un programme d\'entraînement guidé', check:s => s.programsCompleted >= 1 },
+    { id:'program_5',       emoji:'🗂️', label:'Coach de soi-même', desc:'Terminer 5 programmes d\'entraînement guidés', check:s => s.programsCompleted >= 5 },
+    { id:'variety_5',       emoji:'🎲', label:'Touche-à-tout',     desc:'Pratiquer 5 sports différents',            check:s => s.varietyCount >= 5 },
+    { id:'level_5',         emoji:'⭐', label:'Niveau 5',          desc:'Atteindre le niveau 5',                    check:s => s.level >= 5 },
+    { id:'level_10',        emoji:'👑', label:'Niveau 10',         desc:'Atteindre le niveau 10 — le sommet',       check:s => s.level >= 10 },
 ];
 
 // Confettis en CSS pur : une poignée de barrettes colorées qui tombent
@@ -1020,13 +1146,66 @@ const ActivityHeatmap = ({ activityDates }) => {
 // Journal privé de séances sans adversaire : artifacts/{appId}/users/{uid}/workouts
 // (lecture/écriture réservées au propriétaire — même schéma que la liste
 // de contacts, aucun champ partagé).
+// Chronomètre réutilisable (séance libre ou repos de programme). Purement
+// local : aucun état ne survit à un démontage, l'appelant lit `elapsed`.
+const formatClock = (totalSec) => {
+    const s = Math.max(0, Math.round(totalSec));
+    const m = Math.floor(s / 60), r = s % 60;
+    return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+};
+const WorkoutTimer = ({ mode = 'up', targetSec = 0, onDone, compact = false }) => {
+    const [elapsed, setElapsed] = useState(0);
+    const [running, setRunning] = useState(false);
+    const intervalRef = useRef(null);
+    const doneRef = useRef(false);
+
+    useEffect(() => {
+        if (!running) return;
+        intervalRef.current = setInterval(() => {
+            setElapsed(e => {
+                const next = mode === 'down' ? e - 1 : e + 1;
+                if (mode === 'down' && next <= 0 && !doneRef.current) {
+                    doneRef.current = true;
+                    clearInterval(intervalRef.current);
+                    setRunning(false);
+                    onDone?.();
+                    return 0;
+                }
+                return next;
+            });
+        }, 1000);
+        return () => clearInterval(intervalRef.current);
+    }, [running, mode]);
+
+    useEffect(() => { if (mode === 'down') { setElapsed(targetSec); doneRef.current = false; } }, [targetSec, mode]);
+
+    const display = mode === 'down' ? elapsed : elapsed;
+    const btnStyle = {width:'34px',height:'34px',borderRadius:'12px',border:'1px solid rgba(255,255,255,.14)',background:'rgba(255,255,255,.09)',color:'white',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0};
+
+    return (
+        <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+            <p style={{fontFamily:'ui-monospace,SFMono-Regular,Menlo,monospace',fontWeight:800,fontSize:compact?'20px':'30px',color:'#FF9F0A',minWidth:compact?'62px':'90px',textAlign:'center'}}>{formatClock(display)}</p>
+            <button style={btnStyle} onClick={()=>setRunning(r=>!r)} title={running?'Pause':'Démarrer'}>
+                <Icon name={running?'pause':'play'} size={14}/>
+            </button>
+            <button style={btnStyle} onClick={()=>{setRunning(false); setElapsed(mode==='down'?targetSec:0); doneRef.current=false;}} title="Réinitialiser">
+                <Icon name="refresh" size={14}/>
+            </button>
+            {mode==='up' && <button style={{...btnStyle,width:'auto',padding:'0 10px',fontSize:'9px',fontWeight:800,letterSpacing:'.06em',textTransform:'uppercase',color:'#FF9F0A',borderColor:'rgba(255,122,0,.35)'}} onClick={()=>{setRunning(false); onDone?.(elapsed);}}>Utiliser</button>}
+        </div>
+    );
+};
+
 const SoloSessionModal = ({ user, onClose, onSaved }) => {
     const [sport, setSport] = useState(SPORT_LIST[0]?.id || '');
     const [value, setValue] = useState('');
     const [notes, setNotes] = useState('');
     const [saving, setSaving] = useState(false);
+    const [showTimer, setShowTimer] = useState(false);
+    const [durationSec, setDurationSec] = useState(0);
 
     const selectedSport = SPORT_LIST.find(s => s.id === sport);
+    const calPreview = estimateCalories(sport, value);
 
     const handleSave = async () => {
         const num = Number(value);
@@ -1037,6 +1216,8 @@ const SoloSessionModal = ({ user, onClose, onSaved }) => {
                 .collection('users').doc(user.uid).collection('workouts').add({
                     sport, value: num, unit: selectedSport?.unit || 'pts',
                     notes: notes.trim(),
+                    calories: estimateCalories(sport, num),
+                    durationSec: durationSec > 0 ? durationSec : null,
                     createdAt: window.firebase.firestore.FieldValue.serverTimestamp(),
                 });
             notify('Séance enregistrée.', 'success');
@@ -1063,14 +1244,28 @@ const SoloSessionModal = ({ user, onClose, onSaved }) => {
                         </button>
                     ))}
                 </div>
-                <div style={{textAlign:'center',marginBottom:'18px'}}>
+                <div style={{textAlign:'center',marginBottom:'10px'}}>
                     <div style={{display:'flex',alignItems:'baseline',justifyContent:'center',gap:'6px'}}>
                         <input type="number" min="0" autoFocus
                             style={{background:'transparent',border:'none',fontSize:'44px',fontFamily:'Syne,sans-serif',fontWeight:800,color:'#FF9F0A',textAlign:'center',width:'160px'}}
                             value={value} onChange={e=>setValue(e.target.value)} placeholder="0"/>
                         <span style={{color:'rgba(235,235,245,.58)',fontSize:'14px',fontWeight:600}}>{selectedSport?.unit || 'pts'}</span>
                     </div>
+                    {value !== '' && Number(value) > 0 && (
+                        <p style={{fontSize:'10px',color:'rgba(235,235,245,.5)',marginTop:'2px'}}>≈ {calPreview} kcal estimées</p>
+                    )}
                 </div>
+
+                <button onClick={()=>setShowTimer(t=>!t)}
+                    style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',width:'100%',padding:'8px',marginBottom:'14px',background:'transparent',border:'none',color:'#FF9F0A',fontSize:'10px',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',cursor:'pointer'}}>
+                    <Icon name="clock" size={12}/>{showTimer?'Masquer le chronomètre':'Chronométrer cette séance'}{durationSec>0 && !showTimer ? ` · ${formatClock(durationSec)}` : ''}
+                </button>
+                {showTimer && (
+                    <div style={{display:'flex',justifyContent:'center',marginBottom:'16px',padding:'12px',background:'rgba(255,255,255,.045)',border:'1px solid rgba(255,255,255,.1)',borderRadius:'18px'}}>
+                        <WorkoutTimer mode="up" onDone={(sec)=>{setDurationSec(sec); setShowTimer(false); notify('Durée enregistrée.', 'info');}}/>
+                    </div>
+                )}
+
                 <textarea className="input-glow" rows="2" placeholder="Notes (facultatif)"
                     style={{width:'100%',background:'rgba(255,255,255,.055)',border:'1px solid rgba(255,255,255,.12)',borderRadius:'18px',padding:'12px 14px',fontSize:'13px',marginBottom:'18px',fontFamily:'DM Sans,sans-serif'}}
                     value={notes} onChange={e=>setNotes(e.target.value)}/>
@@ -1092,9 +1287,17 @@ const SoloSessionCard = ({ session, onDelete }) => {
                 {SPORT_ICONS[session.sport]||'🎯'}
             </div>
             <div style={{flex:1,minWidth:0}}>
-                <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'15px',color:'white'}}>{session.value} <span style={{fontSize:'11px',color:'#FF9F0A',fontWeight:700}}>{session.unit}</span></p>
+                <div style={{display:'flex',alignItems:'baseline',gap:'6px',flexWrap:'wrap'}}>
+                    <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'15px',color:'white'}}>{session.value} <span style={{fontSize:'11px',color:'#FF9F0A',fontWeight:700}}>{session.unit}</span></p>
+                    {session.programName && (
+                        <span style={{fontSize:'8px',fontWeight:800,color:'#FF9F0A',background:'rgba(255,122,0,.14)',border:'1px solid rgba(255,122,0,.3)',borderRadius:'99px',padding:'2px 7px',textTransform:'uppercase',letterSpacing:'.04em'}}>{session.programName}</span>
+                    )}
+                </div>
                 <p style={{fontSize:'10px',color:'rgba(235,235,245,.58)',marginTop:'2px'}}>
-                    {formatDate(session.createdAt)}{session.notes ? ` · ${session.notes}` : ''}
+                    {formatDate(session.createdAt)}
+                    {session.calories ? ` · 🔥 ${session.calories} kcal` : ''}
+                    {session.durationSec ? ` · ⏱ ${formatClock(session.durationSec)}` : ''}
+                    {session.notes ? ` · ${session.notes}` : ''}
                 </p>
             </div>
             <button className="delete-btn" disabled={deleting} onClick={handleDelete} title="Supprimer">
@@ -1131,6 +1334,229 @@ const WeeklyGoalModal = ({ current, onClose, onSave }) => {
                     style={{width:'100%',padding:'14px',borderRadius:'20px',background:'linear-gradient(135deg,#FF7A00,#F2570A)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>
                     Enregistrer
                 </button>
+            </div>
+        </div>
+    );
+};
+
+// ── Bibliothèque d'exercices ──────────────────────────────────────────────
+const ExerciseLibraryModal = ({ onClose }) => {
+    const [group, setGroup] = useState('Tous');
+    const groups = ['Tous', ...Array.from(new Set(EXERCISE_LIBRARY.map(e=>e.group)))];
+    const items = EXERCISE_LIBRARY.filter(e => group==='Tous' || e.group===group)
+        .map(e => ({...e, ...SPORT_LIST.find(s=>s.id===e.id)}));
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-sheet" style={{padding:'24px',borderRadius:'34px'}} onClick={e=>e.stopPropagation()}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'16px'}}>
+                    <div>
+                        <p style={{color:'#FF7A00',fontSize:'9px',fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase'}}>Références</p>
+                        <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginTop:'2px'}}>Bibliothèque d'exercices</h3>
+                    </div>
+                    <button onClick={onClose} style={{padding:'8px',background:'rgba(255,255,255,.12)',borderRadius:'18px',border:'1px solid rgba(255,255,255,.12)',color:'rgba(235,235,245,.58)',cursor:'pointer',display:'flex'}}><Icon name="x" size={16}/></button>
+                </div>
+                <div style={{display:'flex',gap:'6px',marginBottom:'14px',overflowX:'auto',paddingBottom:'4px'}}>
+                    {groups.map(g => (
+                        <button key={g} onClick={()=>setGroup(g)}
+                            style={{flexShrink:0,padding:'7px 14px',borderRadius:'99px',border:`1px solid ${group===g?'rgba(255,122,0,.5)':'rgba(255,255,255,.12)'}`,background:group===g?'rgba(255,122,0,.14)':'rgba(255,255,255,.055)',color:group===g?'#FF9F0A':'rgba(235,235,245,.58)',fontSize:'10px',fontWeight:700,letterSpacing:'.04em',textTransform:'uppercase',cursor:'pointer',whiteSpace:'nowrap'}}>
+                            {g}
+                        </button>
+                    ))}
+                </div>
+                <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+                    {items.map(ex => (
+                        <div key={ex.id} className="solo-card" style={{alignItems:'flex-start'}}>
+                            <div style={{width:'38px',height:'38px',borderRadius:'13px',background:'rgba(255,122,0,.14)',border:'1px solid rgba(255,122,0,.25)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'18px',flexShrink:0}} className="emoji-native">
+                                {SPORT_ICONS[ex.id]||'🎯'}
+                            </div>
+                            <div style={{flex:1,minWidth:0}}>
+                                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'8px'}}>
+                                    <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',color:'white'}}>{ex.label}</p>
+                                    <span style={{fontSize:'8px',fontWeight:700,color:'rgba(235,235,245,.5)',textTransform:'uppercase',letterSpacing:'.05em'}}>{ex.group}</span>
+                                </div>
+                                <p style={{fontSize:'11px',color:'rgba(235,235,245,.68)',marginTop:'4px',lineHeight:1.5}}>{ex.tips}</p>
+                                <p style={{fontSize:'9px',color:'#FF9F0A',marginTop:'6px',fontWeight:700}}>≈ {estimateCalories(ex.id, ex.unit==='sec'?60:ex.unit==='km'||ex.unit==='m'?1:10)} kcal / {ex.unit==='sec'?'min':ex.unit==='km'?'km':ex.unit==='m'?'m':'10 '+ex.unit}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ── Graphique de progression par sport ────────────────────────────────────
+// Polyligne SVG simple : aucune dépendance externe, cohérente avec le reste
+// du design system (accent orange, glass background).
+const SportProgressChart = ({ sessions }) => {
+    if (sessions.length < 2) {
+        return (
+            <div style={{padding:'28px 12px',textAlign:'center'}}>
+                <p style={{fontSize:'11px',color:'rgba(235,235,245,.5)'}}>Enregistrez au moins 2 séances de ce sport pour voir votre progression.</p>
+            </div>
+        );
+    }
+    const points = sessions.slice().reverse();
+    const values = points.map(p=>p.value);
+    const max = Math.max(...values), min = Math.min(0, ...values);
+    const w = 300, h = 110, pad = 12;
+    const stepX = (w - 2*pad) / (points.length - 1);
+    const coords = points.map((p,i) => {
+        const x = pad + i*stepX;
+        const y = h - pad - ((p.value - min) / ((max - min) || 1)) * (h - 2*pad);
+        return [x, y];
+    });
+    const path = coords.map((c,i) => (i===0?'M':'L') + c[0].toFixed(1) + ',' + c[1].toFixed(1)).join(' ');
+    const areaPath = path + ` L${coords[coords.length-1][0].toFixed(1)},${h-pad} L${coords[0][0].toFixed(1)},${h-pad} Z`;
+    return (
+        <div>
+            <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} style={{overflow:'visible'}}>
+                <defs>
+                    <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#FF7A00" stopOpacity="0.35"/>
+                        <stop offset="100%" stopColor="#FF7A00" stopOpacity="0"/>
+                    </linearGradient>
+                </defs>
+                <path d={areaPath} fill="url(#chartFill)" stroke="none"/>
+                <path d={path} fill="none" stroke="#FF9F0A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                {coords.map((c,i) => (
+                    <circle key={i} cx={c[0]} cy={c[1]} r={i===coords.length-1?4:2.5} fill="#FF9F0A" stroke="#05060A" strokeWidth="1"/>
+                ))}
+            </svg>
+            <div style={{display:'flex',justifyContent:'space-between',marginTop:'6px'}}>
+                <p style={{fontSize:'9px',color:'rgba(235,235,245,.5)'}}>{formatDate(points[0].createdAt)}</p>
+                <p style={{fontSize:'9px',color:'rgba(235,235,245,.5)'}}>{formatDate(points[points.length-1].createdAt)}</p>
+            </div>
+        </div>
+    );
+};
+
+// ── Programmes d'entraînement guidés ──────────────────────────────────────
+const ProgramsModal = ({ onClose, onSelect }) => (
+    <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-sheet" style={{padding:'24px',borderRadius:'34px'}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'16px'}}>
+                <div>
+                    <p style={{color:'#FF7A00',fontSize:'9px',fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase'}}>Guidé</p>
+                    <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginTop:'2px'}}>Programmes d'entraînement</h3>
+                </div>
+                <button onClick={onClose} style={{padding:'8px',background:'rgba(255,255,255,.12)',borderRadius:'18px',border:'1px solid rgba(255,255,255,.12)',color:'rgba(235,235,245,.58)',cursor:'pointer',display:'flex'}}><Icon name="x" size={16}/></button>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
+                {WORKOUT_PROGRAMS.map(p => (
+                    <button key={p.id} onClick={()=>onSelect(p)} className="solo-card" style={{width:'100%',textAlign:'left',cursor:'pointer',alignItems:'flex-start'}}>
+                        <div style={{width:'42px',height:'42px',borderRadius:'15px',background:'rgba(255,122,0,.14)',border:'1px solid rgba(255,122,0,.25)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'20px',flexShrink:0}} className="emoji-native">{p.emoji}</div>
+                        <div style={{flex:1,minWidth:0}}>
+                            <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',color:'white'}}>{p.label}</p>
+                            <p style={{fontSize:'10px',color:'rgba(235,235,245,.6)',marginTop:'3px',lineHeight:1.5}}>{p.desc}</p>
+                            <div style={{display:'flex',gap:'6px',marginTop:'8px',flexWrap:'wrap'}}>
+                                <span style={{fontSize:'8px',fontWeight:700,color:'#FF9F0A',background:'rgba(255,122,0,.12)',borderRadius:'99px',padding:'3px 8px',textTransform:'uppercase'}}>{p.level}</span>
+                                <span style={{fontSize:'8px',fontWeight:700,color:'rgba(235,235,245,.6)',background:'rgba(255,255,255,.07)',borderRadius:'99px',padding:'3px 8px'}}>~{p.minutes} min</span>
+                                <span style={{fontSize:'8px',fontWeight:700,color:'rgba(235,235,245,.6)',background:'rgba(255,255,255,.07)',borderRadius:'99px',padding:'3px 8px'}}>{p.exercises.length} étapes</span>
+                            </div>
+                        </div>
+                        <Icon name="chevronRight" size={16} style={{color:'rgba(235,235,245,.4)',flexShrink:0,marginTop:'4px'}}/>
+                    </button>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
+// Exécution pas-à-pas d'un programme : chaque étape validée journalise
+// immédiatement une séance solo taguée `programRunId` (sert au comptage des
+// programmes terminés pour les succès et l'XP).
+const ProgramRunner = ({ program, user, onClose, onFinished }) => {
+    const [step, setStep] = useState(0);
+    const [phase, setPhase] = useState('exercise'); // exercise | rest | done
+    const [logging, setLogging] = useState(false);
+    const runIdRef = useRef(`prog_${Date.now()}_${Math.random().toString(36).slice(2,8)}`);
+    const ex = program.exercises[step];
+    const isLast = step === program.exercises.length - 1;
+
+    const logStep = async () => {
+        if (logging) return;
+        setLogging(true);
+        try {
+            await db.collection('artifacts').doc(ONYX_APP_ID)
+                .collection('users').doc(user.uid).collection('workouts').add({
+                    sport: ex.sport, value: ex.target, unit: ex.unit,
+                    notes: `Étape ${step+1}/${program.exercises.length}`,
+                    calories: estimateCalories(ex.sport, ex.target),
+                    programId: program.id, programName: program.label, programRunId: runIdRef.current,
+                    createdAt: window.firebase.firestore.FieldValue.serverTimestamp(),
+                });
+        } catch (e) { notify(errorMessage(e), 'error'); }
+        setLogging(false);
+        if (ex.restSec > 0 && !isLast) { setPhase('rest'); }
+        else if (!isLast) { setStep(s=>s+1); setPhase('exercise'); }
+        else { setPhase('done'); }
+    };
+
+    const nextAfterRest = () => { setStep(s=>s+1); setPhase('exercise'); };
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-sheet" style={{padding:'24px',borderRadius:'34px',textAlign:'center'}} onClick={e=>e.stopPropagation()}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'18px',textAlign:'left'}}>
+                    <div>
+                        <p style={{color:'#FF7A00',fontSize:'9px',fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase'}}>{program.label}</p>
+                        <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'15px',color:'white',marginTop:'2px'}}>
+                            {phase==='done' ? 'Programme terminé 🎉' : `Étape ${step+1} / ${program.exercises.length}`}
+                        </h3>
+                    </div>
+                    <button onClick={onClose} style={{padding:'8px',background:'rgba(255,255,255,.12)',borderRadius:'18px',border:'1px solid rgba(255,255,255,.12)',color:'rgba(235,235,245,.58)',cursor:'pointer',display:'flex'}}><Icon name="x" size={16}/></button>
+                </div>
+
+                <div className="progress-bar" style={{marginBottom:'22px'}}>
+                    <div className="progress-fill" style={{'--prog-w':`${Math.round(((phase==='done'?program.exercises.length:step + (phase==='rest'?1:0))/program.exercises.length)*100)}%`}}/>
+                </div>
+
+                {phase === 'exercise' && ex && (
+                    <>
+                        <div style={{fontSize:'52px',marginBottom:'10px'}} className="emoji-native">{SPORT_ICONS[ex.sport]}</div>
+                        <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'22px',color:'white',marginBottom:'4px'}}>
+                            {ex.target} <span style={{color:'#FF9F0A'}}>{ex.unit}</span>
+                        </p>
+                        <p style={{fontSize:'11px',color:'rgba(235,235,245,.58)',marginBottom:'20px'}}>{SPORT_LIST.find(s=>s.id===ex.sport)?.label}</p>
+                        {ex.isDuration && (
+                            <div style={{display:'flex',justifyContent:'center',marginBottom:'20px'}}>
+                                <WorkoutTimer mode="down" targetSec={ex.target} onDone={logStep}/>
+                            </div>
+                        )}
+                        <button disabled={logging} onClick={logStep}
+                            style={{width:'100%',padding:'14px',borderRadius:'20px',background:'linear-gradient(135deg,#FF7A00,#F2570A)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>
+                            {logging ? 'Enregistrement…' : '✓ Étape terminée'}
+                        </button>
+                    </>
+                )}
+
+                {phase === 'rest' && (
+                    <>
+                        <p style={{fontSize:'10px',color:'#FF9F0A',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',marginBottom:'12px'}}>Repos</p>
+                        <div style={{display:'flex',justifyContent:'center',marginBottom:'18px'}}>
+                            <WorkoutTimer mode="down" targetSec={ex.restSec} onDone={nextAfterRest}/>
+                        </div>
+                        <button onClick={nextAfterRest}
+                            style={{width:'100%',padding:'12px',borderRadius:'18px',background:'rgba(255,255,255,.09)',border:'1px solid rgba(255,255,255,.14)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>
+                            Passer le repos
+                        </button>
+                    </>
+                )}
+
+                {phase === 'done' && (
+                    <>
+                        <Confetti/>
+                        <div style={{fontSize:'52px',marginBottom:'10px'}} className="emoji-native">🏆</div>
+                        <p style={{fontSize:'13px',color:'rgba(235,235,245,.78)',marginBottom:'20px',lineHeight:1.6}}>
+                            Bravo, vous avez terminé <strong style={{color:'white'}}>{program.label}</strong> !<br/>Toutes vos étapes ont été journalisées.
+                        </p>
+                        <button onClick={()=>{onFinished?.(); onClose();}}
+                            style={{width:'100%',padding:'14px',borderRadius:'20px',background:'linear-gradient(135deg,#FF7A00,#F2570A)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer'}}>
+                            Terminer
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     );
@@ -1190,6 +1616,12 @@ const Icon = ({ name, size=18, className='' }) => {
         info: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
         mail: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>,
         externalLink: <><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></>,
+        play: <polygon points="5 3 19 12 5 21 5 3"/>,
+        pause: <><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></>,
+        book: <><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></>,
+        layers: <><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></>,
+        chevronRight: <polyline points="9 18 15 12 9 6"/>,
+        chevronLeft: <polyline points="15 18 9 12 15 6"/>,
     };
     return (
         <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -2770,7 +3202,7 @@ const LeaderboardTab = ({ user, friends, friendProfiles, challenges }) => {
 // Modifications v2026-05 :
 //  • Passe profile et challenges à RightsModal pour l'export (art. 20 RGPD)
 //  • Passe onManageConsent à RightsModal
-const ProfileTab = ({ user, profile, setProfile, challenges, streak, personalRecords, activityDates, onShowRights, onShowPrivacy, onShowTerms, onManageConsent }) => {
+const ProfileTab = ({ user, profile, setProfile, challenges, streak, personalRecords, activityDates, levelInfo, totalCalories, programsCompleted, varietyCount, soloCount, onShowRights, onShowPrivacy, onShowTerms, onManageConsent }) => {
     const [editing, setEditing] = useState(false);
     const [nameInput, setNameInput] = useState(profile.displayName||'');
     const [saving, setSaving] = useState(false);
@@ -2827,6 +3259,24 @@ const ProfileTab = ({ user, profile, setProfile, challenges, streak, personalRec
                     </button>
                 </div>
             </div>
+            {/* ── Niveau / XP ─────────────────────────────────────────── */}
+            {levelInfo && (
+                <div style={{background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,122,0,.2)',borderRadius:'24px',padding:'16px',marginBottom:'12px'}}>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'10px'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                            <span style={{fontSize:'20px'}} className="emoji-native">⭐</span>
+                            <div>
+                                <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'14px',color:'white'}}>Niveau {levelInfo.level} · {levelInfo.title}</p>
+                                <p style={{fontSize:'9px',color:'rgba(235,235,245,.5)'}}>{levelInfo.xp} XP au total</p>
+                            </div>
+                        </div>
+                        {!levelInfo.isMax && <span style={{fontSize:'9px',color:'#FF9F0A',fontWeight:700}}>{levelInfo.pct}%</span>}
+                    </div>
+                    <div className="progress-bar"><div className="progress-fill" style={{'--prog-w':`${levelInfo.pct}%`}}/></div>
+                    {!levelInfo.isMax && <p style={{fontSize:'9px',color:'rgba(235,235,245,.5)',marginTop:'6px'}}>{levelInfo.ceil - levelInfo.xp} XP avant le niveau {levelInfo.level+1}</p>}
+                </div>
+            )}
+
             <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'8px',marginBottom:'16px'}}>
                 {[
                     {label:'Total défis',value:myStats.total,icon:'target',color:'rgba(235,235,245,.78)'},
@@ -2858,6 +3308,29 @@ const ProfileTab = ({ user, profile, setProfile, challenges, streak, personalRec
                     )}
                 </div>
                 <ActivityHeatmap activityDates={activityDates}/>
+            </div>
+
+            {/* ── Statistiques d'entraînement avancées ──────────────────── */}
+            <div style={{background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.12)',borderRadius:'24px',padding:'16px',marginBottom:'12px'}}>
+                <p style={{color:'#FF9F0A',fontSize:'9px',fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase',marginBottom:'12px',display:'flex',alignItems:'center',gap:'6px'}}>
+                    <Icon name="chartbar" size={12}/>Entraînement
+                </p>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'8px'}}>
+                    {[
+                        {label:'Kcal brûlées (est.)',value:totalCalories||0,icon:'flame',color:'#FF453A'},
+                        {label:'Séances solo',value:soloCount||0,icon:'target',color:'rgba(235,235,245,.78)'},
+                        {label:'Programmes suivis',value:programsCompleted||0,icon:'layers',color:'#FF9F0A'},
+                        {label:'Sports pratiqués',value:varietyCount||0,icon:'star',color:'#0A84FF'},
+                    ].map(s => (
+                        <div key={s.label} className="record-tile">
+                            <div style={{display:'flex',alignItems:'center',gap:'6px',marginBottom:'6px'}}>
+                                <Icon name={s.icon} size={12}/>
+                                <p style={{color:'rgba(235,235,245,.58)',fontSize:'8px',fontWeight:700,textTransform:'uppercase',letterSpacing:'.06em'}}>{s.label}</p>
+                            </div>
+                            <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'20px',color:s.color}}>{s.value}</p>
+                        </div>
+                    ))}
+                </div>
             </div>
 
             {/* ── Records personnels ─────────────────────────────────── */}
@@ -2974,7 +3447,12 @@ function App() {
     const [soloSessions, setSoloSessions] = useState([]);
     const [showSoloModal, setShowSoloModal] = useState(false);
     const [showGoalModal, setShowGoalModal] = useState(false);
+    const [showLibraryModal, setShowLibraryModal] = useState(false);
+    const [showProgramsModal, setShowProgramsModal] = useState(false);
+    const [activeProgram, setActiveProgram] = useState(null);
+    const [chartSport, setChartSport] = useState(null);
     const presenceIntervalRef = useRef(null);
+    const prevLevelRef = useRef(null);
 
     useEffect(() => {
         if (!ageConfirmed) { setShowAgeGate(true); setLoading(false); return; }
@@ -3160,6 +3638,27 @@ function App() {
         return map;
     }, [challenges, soloSessions, user]);
 
+    // Calories cumulées (estimation) : privilégie le champ stocké au moment
+    // de l'enregistrement, calcule à la volée pour les anciennes séances.
+    const totalCalories = useMemo(() => {
+        return soloSessions.reduce((sum, s) => sum + (s.calories ?? estimateCalories(s.sport, s.value)), 0);
+    }, [soloSessions]);
+
+    // Nombre de programmes guidés distincts terminés (regroupés par
+    // programRunId, un identifiant unique généré à chaque lancement).
+    const programsCompleted = useMemo(() => {
+        return new Set(soloSessions.filter(s => s.programRunId).map(s => s.programRunId)).size;
+    }, [soloSessions]);
+
+    // Sports différents pratiqués (défis + séances solo) — sert au badge
+    // « touche-à-tout » et alimente la sélection du graphique de progression.
+    const varietySports = useMemo(() => {
+        const set = new Set();
+        if (user) challenges.forEach(c => { if (c.createdBy===user.uid||c.challengedUid===user.uid) set.add(c.sport); });
+        soloSessions.forEach(s => set.add(s.sport));
+        return set;
+    }, [challenges, soloSessions, user]);
+
     const badgeStats = useMemo(() => {
         if (!user) return null;
         const mine = challenges.filter(c=>c.createdBy===user.uid||c.challengedUid===user.uid);
@@ -3167,22 +3666,45 @@ function App() {
             totalChallenges: mine.length,
             wins: mine.filter(c=>c.status==='completed'&&c.winner===user.uid).length,
             streak, friendCount: friends.length, soloCount: soloSessions.length,
+            totalCalories, programsCompleted, varietyCount: varietySports.size,
+            unlockedBadgesCount: (profile.unlockedBadges||[]).length,
         };
-    }, [challenges, user, streak, friends, soloSessions]);
+    }, [challenges, user, streak, friends, soloSessions, totalCalories, programsCompleted, varietySports, profile.unlockedBadges]);
+
+    // XP dérivée + niveau courant. Purement calculé, aucune écriture DB.
+    const levelInfo = useMemo(() => {
+        if (!badgeStats) return getLevelInfo(0);
+        return getLevelInfo(computeXp(badgeStats));
+    }, [badgeStats]);
+
+    // Fête chaque montée de niveau avec la même overlay que les succès.
+    useEffect(() => {
+        if (!levelInfo) return;
+        if (prevLevelRef.current === null) { prevLevelRef.current = levelInfo.level; return; }
+        if (levelInfo.level > prevLevelRef.current) {
+            setBadgeQueue(q => [...q, { id:`level_${levelInfo.level}`, emoji:'⭐', label:`Niveau ${levelInfo.level}`, desc:`Vous êtes maintenant « ${levelInfo.title} »`}]);
+        }
+        prevLevelRef.current = levelInfo.level;
+    }, [levelInfo]);
+
+    const badgeStatsWithLevel = useMemo(() => {
+        if (!badgeStats) return null;
+        return { ...badgeStats, level: levelInfo.level };
+    }, [badgeStats, levelInfo]);
 
     // Détecte les succès nouvellement atteints, les enregistre sur le
     // profil (pour ne pas re-célébrer à chaque rechargement) et les met
     // en file pour l'overlay de célébration.
     useEffect(() => {
-        if (!user || !badgeStats || !profile) return;
+        if (!user || !badgeStatsWithLevel || !profile) return;
         const already = new Set(profile.unlockedBadges || []);
-        const newly = BADGES.filter(b => !already.has(b.id) && b.check(badgeStats));
+        const newly = BADGES.filter(b => !already.has(b.id) && b.check(badgeStatsWithLevel));
         if (newly.length === 0) return;
         const ref = db.collection('artifacts').doc(ONYX_APP_ID)
             .collection('public').doc('data').collection('profiles').doc(user.uid);
         ref.update({ unlockedBadges: window.firebase.firestore.FieldValue.arrayUnion(...newly.map(b=>b.id)) }).catch(()=>{});
         setBadgeQueue(q => [...q, ...newly]);
-    }, [badgeStats, profile, user]);
+    }, [badgeStatsWithLevel, profile, user]);
 
     // Sans cette veille, personne n'est prévenu qu'un défi a été accepté,
     // refusé ou remporté tant qu'il ne rouvre pas l'onglet.
@@ -3426,22 +3948,72 @@ function App() {
 
                                         {homeView==='solo' && (
                                         <>
-                                        <button onClick={()=>setShowSoloModal(true)}
-                                            style={{width:'100%',padding:'13px',borderRadius:'20px',background:'linear-gradient(135deg,#FF7A00,#F2570A)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'16px'}}>
-                                            <Icon name="plus" size={14}/>Enregistrer une séance
-                                        </button>
+                                        {/* ── Niveau / XP ─────────────────────────────────────── */}
+                                        <div style={{background:'var(--glass)',border:'1px solid var(--glass-line)',borderRadius:'20px',padding:'14px 16px',marginBottom:'12px'}}>
+                                            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'8px'}}>
+                                                <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                                                    <span style={{fontSize:'18px'}} className="emoji-native">⭐</span>
+                                                    <div>
+                                                        <p style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'13px',color:'white'}}>Niveau {levelInfo.level} · {levelInfo.title}</p>
+                                                        <p style={{fontSize:'9px',color:'rgba(235,235,245,.5)'}}>{levelInfo.xp} XP{!levelInfo.isMax ? ` · ${levelInfo.ceil - levelInfo.xp} XP avant le niveau suivant` : ' · Niveau maximum'}</p>
+                                                    </div>
+                                                </div>
+                                                <span style={{fontSize:'8px',fontWeight:700,color:'#FF9F0A',background:'rgba(255,122,0,.12)',borderRadius:'99px',padding:'4px 9px'}}>🔥 {totalCalories} kcal</span>
+                                            </div>
+                                            <div className="progress-bar"><div className="progress-fill" style={{'--prog-w':`${levelInfo.pct}%`}}/></div>
+                                        </div>
+
+                                        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'8px',marginBottom:'16px'}}>
+                                            <button onClick={()=>setShowSoloModal(true)}
+                                                style={{padding:'12px 6px',borderRadius:'18px',background:'linear-gradient(135deg,#FF7A00,#F2570A)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'9px',letterSpacing:'.06em',textTransform:'uppercase',border:'none',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:'5px'}}>
+                                                <Icon name="plus" size={15}/>Séance
+                                            </button>
+                                            <button onClick={()=>setShowProgramsModal(true)}
+                                                style={{padding:'12px 6px',borderRadius:'18px',background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.14)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'9px',letterSpacing:'.06em',textTransform:'uppercase',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:'5px'}}>
+                                                <Icon name="layers" size={15}/>Programmes
+                                            </button>
+                                            <button onClick={()=>setShowLibraryModal(true)}
+                                                style={{padding:'12px 6px',borderRadius:'18px',background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.14)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'9px',letterSpacing:'.06em',textTransform:'uppercase',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:'5px'}}>
+                                                <Icon name="book" size={15}/>Exercices
+                                            </button>
+                                        </div>
+
                                         {soloSessions.length===0 ? (
                                             <div style={{textAlign:'center',padding:'48px 16px'}}>
                                                 <div style={{fontSize:'48px',marginBottom:'12px'}} className="emoji-native">🏋️</div>
                                                 <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginBottom:'8px'}}>Aucun entraînement solo</h3>
-                                                <p style={{color:'rgba(235,235,245,.58)',fontSize:'12px'}}>Enregistrez vos séances même sans adversaire : elles comptent pour votre série et vos records.</p>
+                                                <p style={{color:'rgba(235,235,245,.58)',fontSize:'12px'}}>Enregistrez vos séances ou suivez un programme guidé : elles comptent pour votre série et vos records.</p>
                                             </div>
                                         ) : (
+                                            <>
+                                            {/* ── Progression par sport ───────────────────────── */}
+                                            {(() => {
+                                                const sportsInSessions = Array.from(new Set(soloSessions.map(s=>s.sport)));
+                                                const active = sportsInSessions.includes(chartSport) ? chartSport : sportsInSessions[0];
+                                                const chartSessions = soloSessions.filter(s=>s.sport===active);
+                                                return (
+                                                    <div style={{background:'var(--glass)',border:'1px solid var(--glass-line)',borderRadius:'20px',padding:'14px 16px',marginBottom:'16px'}}>
+                                                        <p style={{color:'#FF9F0A',fontSize:'9px',fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase',marginBottom:'10px',display:'flex',alignItems:'center',gap:'6px'}}>
+                                                            <Icon name="chartbar" size={12}/>Progression
+                                                        </p>
+                                                        <div style={{display:'flex',gap:'6px',marginBottom:'12px',overflowX:'auto',paddingBottom:'2px'}}>
+                                                            {sportsInSessions.map(sp => (
+                                                                <button key={sp} onClick={()=>setChartSport(sp)}
+                                                                    style={{flexShrink:0,display:'flex',alignItems:'center',gap:'4px',padding:'6px 11px',borderRadius:'99px',border:`1px solid ${active===sp?'rgba(255,122,0,.5)':'rgba(255,255,255,.12)'}`,background:active===sp?'rgba(255,122,0,.14)':'rgba(255,255,255,.05)',color:active===sp?'#FF9F0A':'rgba(235,235,245,.58)',fontSize:'10px',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>
+                                                                    <span className="emoji-native">{SPORT_ICONS[sp]}</span>{SPORT_LIST.find(s=>s.id===sp)?.label||sp}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                        <SportProgressChart sessions={chartSessions}/>
+                                                    </div>
+                                                );
+                                            })()}
                                             <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
                                                 {soloSessions.map(s => (
                                                     <SoloSessionCard key={s.id} session={s} onDelete={deleteSoloSession}/>
                                                 ))}
                                             </div>
+                                            </>
                                         )}
                                         </>
                                         )}
@@ -3468,6 +4040,8 @@ function App() {
                                         <ProfileTab
                                             user={user} profile={profile} setProfile={setProfile} challenges={challenges}
                                             streak={streak} personalRecords={personalRecords} activityDates={myActivityDates}
+                                            levelInfo={levelInfo} totalCalories={totalCalories} programsCompleted={programsCompleted}
+                                            varietyCount={varietySports.size} soloCount={soloSessions.length}
                                             onShowRights={()=>setShowRights(true)}
                                             onShowPrivacy={()=>setShowPrivacy(true)}
                                             onShowTerms={()=>setShowTerms(true)}
@@ -3502,6 +4076,13 @@ function App() {
                             {updateTarget && <UpdateProgressModal challenge={updateTarget} user={user} onClose={()=>setUpdateTarget(null)}/>}
                             {showSoloModal && <SoloSessionModal user={user} onClose={()=>setShowSoloModal(false)}/>}
                             {showGoalModal && <WeeklyGoalModal current={profile.weeklyGoal||4} onClose={()=>setShowGoalModal(false)} onSave={saveWeeklyGoal}/>}
+                            {showLibraryModal && <ExerciseLibraryModal onClose={()=>setShowLibraryModal(false)}/>}
+                            {showProgramsModal && <ProgramsModal onClose={()=>setShowProgramsModal(false)} onSelect={(p)=>{setActiveProgram(p); setShowProgramsModal(false);}}/>}
+                            {activeProgram && (
+                                <ProgramRunner program={activeProgram} user={user}
+                                    onClose={()=>setActiveProgram(null)}
+                                    onFinished={()=>notify(`Programme « ${activeProgram.label} » terminé !`, 'success')}/>
+                            )}
                         </>
                     )}
                 </div>
