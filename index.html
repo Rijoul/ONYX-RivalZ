@@ -6,6 +6,28 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>ONYX RivalZ · Défis Sportifs</title>
+    <meta name="theme-color" content="#05060A">
+    <meta name="description" content="Lancez des défis sportifs à vos amis, suivez votre progression et remportez la mise.">
+    <link rel="manifest" id="app-manifest">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%2305060A'/%3E%3Cpath d='M98 28 60 98h26l-8 54 42-74H92z' fill='%23FF7A00'/%3E%3C/svg%3E">
+    <script>
+        // Rend l'app installable sur l'écran d'accueil (iOS/Android) sans fichier séparé.
+        (function () {
+            var icon = "data:image/svg+xml," + encodeURIComponent(
+                "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'>" +
+                "<rect width='512' height='512' rx='114' fill='#05060A'/>" +
+                "<path d='M278 80 170 278h74l-23 154 119-210h-68z' fill='#FF7A00'/></svg>");
+            var manifest = {
+                name: "ONYX RivalZ", short_name: "RivalZ",
+                description: "Défis sportifs entre amis",
+                start_url: ".", scope: ".", display: "standalone", orientation: "portrait",
+                background_color: "#05060A", theme_color: "#05060A", lang: "fr",
+                icons: [{ src: icon, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }]
+            };
+            var url = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" }));
+            document.getElementById("app-manifest").setAttribute("href", url);
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -459,6 +481,41 @@
             box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 10px 26px -16px rgba(0,0,0,.8);
         }
 
+        /* Toasts et bandeau réseau */
+        .toast {
+            pointer-events: auto;
+            display: flex; align-items: center; gap: 10px;
+            width: 100%; max-width: 420px; padding: 12px 15px;
+            border-radius: var(--r-md);
+            background: rgba(20,21,28,.82);
+            border: 1px solid var(--glass-line);
+            backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+            box-shadow: inset 0 1px 0 var(--glass-spec), 0 16px 34px -14px rgba(0,0,0,.95);
+            animation: slideDown .42s var(--spring) both;
+        }
+        .offline-bar {
+            flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 8px 14px; font-size: 12px; font-weight: 600; color: #FFE86B;
+            background: rgba(255,214,10,.12);
+            border-bottom: 1px solid rgba(255,214,10,.28);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            animation: slideDown .35s var(--ease-out) both;
+        }
+
+        /* Champ de recherche */
+        .search-field {
+            width: 100%; padding: 13px 15px 13px 42px; border-radius: var(--r-sm);
+            background: var(--glass); border: 1px solid var(--glass-line); color: #fff; font-size: 14px;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        }
+
+        /* Historique de progression */
+        .history-row {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.07); font-size: 12px;
+        }
+        .history-row:last-child { border-bottom: none; }
+
         /* Icônes de la barre d'onglets */
         .text-orange-500 { color: var(--accent-hi) !important; filter: drop-shadow(0 2px 8px var(--accent-glow)); }
         .text-slate-500  { color: var(--ink-3) !important; }
@@ -551,6 +608,9 @@ function initFirebase(resolve, reject) {
         }
         auth = window.firebase.auth();
         db = window.firebase.firestore();
+        // Cache local : l'app reste consultable sans réseau et rejoue les
+        // écritures au retour de la connexion.
+        db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
         firebaseLoaded = true;
         resolve({ auth, db });
     } catch(e) { reject(e); }
@@ -700,6 +760,75 @@ const SPORT_LIST = [
     { id:'jumping', label:'Sauts', unit:'reps' },
     { id:'custom', label:'Autre', unit:'pts' },
 ];
+
+// ── Notifications éphémères ──────────────────────────────────────────────
+// Avant, chaque échec Firestore partait dans console.error : l'utilisateur
+// voyait un bouton tourner puis plus rien. Tout passe maintenant par ici.
+const toastListeners = new Set();
+let toastSeq = 0;
+const notify = (message, tone = 'info') => {
+    toastSeq += 1;
+    const toast = { id: toastSeq, message, tone };
+    toastListeners.forEach(fn => fn(toast));
+};
+const errorMessage = (e) => {
+    if (!e) return "Action impossible pour le moment.";
+    if (e.code === 'permission-denied') return "Action refusée par le serveur.";
+    if (e.code === 'unavailable' || e.code === 'failed-precondition') return "Pas de réseau : l'action partira au retour de la connexion.";
+    if (e.code === 'auth/too-many-requests') return "Trop de tentatives. Réessayez dans quelques minutes.";
+    if (e.code === 'auth/user-not-found') return "Aucun compte avec cette adresse.";
+    if (e.code === 'auth/invalid-email') return "Adresse email invalide.";
+    return e.message || "Action impossible pour le moment.";
+};
+
+const TOAST_TONES = {
+    success: { accent: '#30D158', glow: 'rgba(48,209,88,.35)',  icon: 'check' },
+    error:   { accent: '#FF453A', glow: 'rgba(255,69,58,.35)',  icon: 'alertTriangle' },
+    info:    { accent: '#FF9F0A', glow: 'rgba(255,159,10,.35)', icon: 'zap' },
+};
+
+const ToastHost = () => {
+    const [toasts, setToasts] = useState([]);
+    useEffect(() => {
+        const add = (t) => {
+            setToasts(list => [...list.slice(-2), t]);
+            setTimeout(() => setToasts(list => list.filter(x => x.id !== t.id)), 4200);
+        };
+        toastListeners.add(add);
+        return () => { toastListeners.delete(add); };
+    }, []);
+    if (toasts.length === 0) return null;
+    return (
+        <div style={{position:'fixed',left:0,right:0,top:0,zIndex:11000,display:'flex',flexDirection:'column',alignItems:'center',gap:'8px',padding:'calc(10px + env(safe-area-inset-top)) 12px 0',pointerEvents:'none'}}>
+            {toasts.map(t => {
+                const tone = TOAST_TONES[t.tone] || TOAST_TONES.info;
+                return (
+                    <div key={t.id} className="toast" style={{borderColor:tone.glow}}>
+                        <span style={{color:tone.accent,display:'flex',flexShrink:0}}><Icon name={tone.icon} size={15}/></span>
+                        <span style={{fontSize:'13px',lineHeight:1.4,color:'rgba(255,255,255,.94)'}}>{t.message}</span>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
+const NetworkBanner = () => {
+    const [online, setOnline] = useState(typeof navigator === 'undefined' ? true : navigator.onLine);
+    useEffect(() => {
+        const up = () => setOnline(true), down = () => setOnline(false);
+        window.addEventListener('online', up);
+        window.addEventListener('offline', down);
+        return () => { window.removeEventListener('online', up); window.removeEventListener('offline', down); };
+    }, []);
+    if (online) return null;
+    return (
+        <div className="offline-bar">
+            <Icon name="alertTriangle" size={13}/>
+            Hors ligne — vos défis restent consultables, les mises à jour partiront au retour du réseau.
+        </div>
+    );
+};
 
 const LOGO = () => (
     <svg viewBox="0 0 48 48" width="100%" height="100%" fill="none">
@@ -864,6 +993,9 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
     const [loadingDiscover, setLoadingDiscover] = useState(false);
     const [removingId, setRemovingId] = useState(null);
     const [actionLoading, setActionLoading] = useState({});
+    const [search, setSearch] = useState('');
+    const [searchResults, setSearchResults] = useState(null);
+    const [searching, setSearching] = useState(false);
 
     const friendUids = useMemo(() => friends.map(f => f.uid), [friends]);
 
@@ -888,6 +1020,45 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
             });
         return unsub;
     }, [user]);
+
+    // Recherche d'un athlète par pseudo. Firestore ne sait pas chercher
+    // "au milieu" d'une chaîne : on tente d'abord un préfixe indexé, puis
+    // on complète par un filtre local sur un lot plus large.
+    const profilesRef = () => db.collection('artifacts').doc(ONYX_APP_ID)
+        .collection('public').doc('data').collection('profiles');
+
+    const runSearch = async (raw) => {
+        const term = raw.trim();
+        if (term.length < 2) { setSearchResults(null); return; }
+        setSearching(true);
+        try {
+            const byPrefix = await profilesRef()
+                .orderBy('displayName').startAt(term).endAt(term + '\uf8ff').limit(20).get();
+            let found = byPrefix.docs.map(d => ({ uid: d.id, ...d.data() }));
+
+            if (found.length < 5) {
+                const wide = await profilesRef().limit(200).get();
+                const needle = term.toLowerCase();
+                const extra = wide.docs
+                    .map(d => ({ uid: d.id, ...d.data() }))
+                    .filter(u => (u.displayName || '').toLowerCase().includes(needle));
+                const seen = new Set(found.map(u => u.uid));
+                extra.forEach(u => { if (!seen.has(u.uid)) { found.push(u); seen.add(u.uid); } });
+            }
+
+            setSearchResults(found.filter(u => u.uid !== user.uid && isValidProfile(u)).slice(0, 20));
+        } catch (e) {
+            notify(errorMessage(e), 'error');
+            setSearchResults([]);
+        }
+        setSearching(false);
+    };
+
+    useEffect(() => {
+        if (subTab !== 'discover') return;
+        const t = setTimeout(() => runSearch(search), 350);
+        return () => clearTimeout(t);
+    }, [search, subTab]);
 
     const loadDiscoverUsers = async () => {
         setLoadingDiscover(true);
@@ -922,7 +1093,8 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
                 createdAt: window.firebase.firestore.FieldValue.serverTimestamp(),
             });
             setSentRequests(prev => [...prev, targetUid]);
-        } catch (e) { console.error(e); }
+            notify("Demande d'ami envoyée.", 'success');
+        } catch (e) { notify(errorMessage(e), 'error'); }
         setActionLoading(prev => ({ ...prev, [targetUid]: false }));
     };
 
@@ -948,7 +1120,8 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
             }
 
             await db.collection('apex_friend_requests').doc(req.id).update({ status: 'accepted' });
-        } catch (e) { console.error(e); }
+            notify("Vous êtes désormais amis.", 'success');
+        } catch (e) { notify(errorMessage(e), 'error'); }
         setActionLoading(prev => ({ ...prev, [req.id]: false }));
     };
 
@@ -956,7 +1129,8 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
         setActionLoading(prev => ({ ...prev, [reqId]: true }));
         try {
             await db.collection('apex_friend_requests').doc(reqId).update({ status: 'declined' });
-        } catch (e) { console.error(e); }
+            notify("Demande refusée.", 'info');
+        } catch (e) { notify(errorMessage(e), 'error'); }
         setActionLoading(prev => ({ ...prev, [reqId]: false }));
     };
 
@@ -979,11 +1153,14 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
                 const updated = (theirDoc.data().friends || []).filter(f => f.uid !== user.uid);
                 await theirListRef.set({ friends: updated });
             }
-        } catch (e) { console.error(e); }
+            notify("Ami retiré.", 'info');
+        } catch (e) { notify(errorMessage(e), 'error'); }
         setRemovingId(null);
     };
 
     const pendingCount = incomingRequests.length;
+    const isSearchMode = searchResults !== null;
+    const displayedUsers = isSearchMode ? searchResults : discoverUsers;
 
     return (
         <div>
@@ -1106,12 +1283,32 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
 
             {subTab === 'discover' && (
                 <div className="fade-in">
+                    <div style={{position:'relative',marginBottom:'14px'}}>
+                        <input
+                            className="search-field"
+                            type="search"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            placeholder="Chercher un athlète par pseudo"/>
+                        <div style={{position:'absolute',left:'14px',top:'50%',transform:'translateY(-50%)',color:'rgba(235,235,245,.4)',display:'flex'}}>
+                            <Icon name="search" size={16}/>
+                        </div>
+                        {search && (
+                            <button onClick={() => setSearch('')}
+                                style={{position:'absolute',right:'10px',top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'rgba(235,235,245,.4)',cursor:'pointer',display:'flex',padding:'4px'}}>
+                                <Icon name="x" size={15}/>
+                            </button>
+                        )}
+                    </div>
+
                     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px'}}>
                         <p className="friend-section-title" style={{marginBottom:0}}>
-                            <Icon name="search" size={12}/>
-                            Athlètes à défier
+                            <Icon name={isSearchMode ? 'search' : 'users'} size={12}/>
+                            {isSearchMode
+                                ? `${displayedUsers.length} résultat${displayedUsers.length!==1?'s':''}`
+                                : 'Athlètes à défier'}
                         </p>
-                        <button onClick={loadDiscoverUsers} disabled={loadingDiscover}
+                        <button onClick={loadDiscoverUsers} disabled={loadingDiscover||isSearchMode}
                             style={{display:'flex',alignItems:'center',gap:'5px',padding:'6px 12px',background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.12)',borderRadius:'14px',cursor:'pointer',color:'rgba(235,235,245,.58)',fontSize:'10px',fontWeight:700}}>
                             <div style={{animation:loadingDiscover?'spin .7s linear infinite':'none',display:'flex'}}>
                                 <Icon name="refresh" size={12}/>
@@ -1120,20 +1317,24 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
                         </button>
                     </div>
 
-                    {loadingDiscover ? (
+                    {(loadingDiscover || searching) ? (
                         <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
                             {[1,2,3,4,5].map(i => (
                                 <div key={i} style={{height:'72px',background:'rgba(255,255,255,.045)',border:'1px solid rgba(255,255,255,.09)',borderRadius:'22px',animation:'pulse 1.5s ease-in-out infinite',animationDelay:`${i*0.1}s`}}/>
                             ))}
                         </div>
-                    ) : discoverUsers.length === 0 ? (
+                    ) : displayedUsers.length === 0 ? (
                         <div style={{textAlign:'center',padding:'48px 16px'}}>
                             <div style={{fontSize:'48px',marginBottom:'12px'}} className="emoji-native">🔍</div>
-                            <p style={{color:'rgba(235,235,245,.58)',fontSize:'12px'}}>Aucun nouvel athlète à découvrir pour l'instant.</p>
+                            <p style={{color:'rgba(235,235,245,.58)',fontSize:'12px'}}>
+                                {isSearchMode
+                                    ? "Aucun athlète ne porte ce pseudo. Vérifiez l'orthographe."
+                                    : "Aucun nouvel athlète à découvrir pour l'instant."}
+                            </p>
                         </div>
                     ) : (
                         <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
-                            {discoverUsers.map((u, i) => {
+                            {displayedUsers.map((u, i) => {
                                 const alreadySent = sentRequests.includes(u.uid);
                                 const isAlreadyFriend = friendUids.includes(u.uid);
                                 const isLoading = actionLoading[u.uid];
@@ -1171,12 +1372,14 @@ const FriendsTab = ({ user, friends, setFriends, friendProfiles, setFriendProfil
                                     </div>
                                 );
                             })}
-                            <div style={{marginTop:'8px',padding:'12px',background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.09)',borderRadius:'20px',textAlign:'center'}}>
-                                <p style={{color:'rgba(235,235,245,.4)',fontSize:'10px',lineHeight:1.6}}>
-                                    Seuls les comptes actifs sont affichés.<br/>
-                                    Actualisez pour découvrir d'autres athlètes.
-                                </p>
-                            </div>
+                            {!isSearchMode && (
+                                <div style={{marginTop:'8px',padding:'12px',background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.09)',borderRadius:'20px',textAlign:'center'}}>
+                                    <p style={{color:'rgba(235,235,245,.4)',fontSize:'11px',lineHeight:1.6}}>
+                                        Seuls les comptes actifs sont affichés.<br/>
+                                        Actualisez, ou cherchez directement un pseudo.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -1677,6 +1880,16 @@ const AuthScreen = ({ onShowPrivacy, onShowTerms }) => {
     const [ageChecked, setAgeChecked] = useState(false);
     const [termsChecked, setTermsChecked] = useState(false);
 
+    const handleResetPassword = async () => {
+        if (!email) { notify("Entrez d'abord votre adresse email.", 'error'); return; }
+        try {
+            await auth.sendPasswordResetEmail(email);
+            notify("Email de réinitialisation envoyé. Pensez aux indésirables.", 'success');
+        } catch (err) {
+            notify(errorMessage(err), 'error');
+        }
+    };
+
     const handleAuth = async (e) => {
         e.preventDefault();
         if (isRegistering && (!ageChecked || !termsChecked)) return;
@@ -1776,6 +1989,12 @@ const AuthScreen = ({ onShowPrivacy, onShowTerms }) => {
                             style={{marginTop:'8px',width:'100%',background:(loading||(isRegistering&&(!ageChecked||!termsChecked)))?'rgba(255,255,255,.12)':'linear-gradient(135deg,#FF7A00,#F2570A)',border:'1px solid rgba(251,146,60,.3)',borderRadius:'20px',padding:'14px',color:'white',fontWeight:800,fontSize:'12px',letterSpacing:'.12em',textTransform:'uppercase',cursor:(loading||(isRegistering&&(!ageChecked||!termsChecked)))?'not-allowed':'pointer',transition:'all .25s',fontFamily:'Syne,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
                             {loading ? (<><div style={{width:'16px',height:'16px',border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .7s linear infinite'}}/> Chargement...</>) : (isRegistering ? '⚡ Créer mon profil' : '⚡ Entrer en compétition')}
                         </button>
+                        {!isRegistering && (
+                            <button type="button" onClick={handleResetPassword}
+                                style={{background:'none',border:'none',color:'rgba(235,235,245,.58)',fontSize:'12px',cursor:'pointer',padding:'4px',marginTop:'2px'}}>
+                                Mot de passe oublié ?
+                            </button>
+                        )}
                     </form>
                 </div>
             </div>
@@ -1821,10 +2040,12 @@ const CreateChallengeModal = ({ user, profile, friends, friendProfiles, onClose 
                 challengedName: challengedProfile.displayName || 'Adversaire',
                 challengedPhoto: challengedProfile.photoURL || getAvatar(challengedProfile.displayName),
                 status: 'pending', progress: { [user.uid]: 0, [form.challengedUid]: 0 }, accepted: false,
+                history: [],
             });
             setSuccess(true);
+            notify("Défi envoyé.", 'success');
             setTimeout(onClose, 1500);
-        } catch(e) { console.error(e); setLoading(false); }
+        } catch(e) { notify(errorMessage(e), 'error'); setLoading(false); }
     };
 
     const modalInputStyle = { ...INPUT_STYLE, borderRadius:'18px', padding:'11px 14px' };
@@ -1958,17 +2179,35 @@ const UpdateProgressModal = ({ challenge, user, onClose }) => {
     const [loading, setLoading] = useState(false);
 
     const handleUpdate = async () => {
-        setLoading(true);
         const newVal = Number(value);
+        if (!Number.isFinite(newVal) || newVal < 0) { notify("Entrez un nombre valide.", 'error'); return; }
+        setLoading(true);
         const otherUid = challenge.createdBy===user.uid ? challenge.challengedUid : challenge.createdBy;
         const otherProgress = challenge.progress?.[otherUid] || 0;
         const updates = { [`progress.${user.uid}`]: newVal };
         if (newVal >= challenge.goal) { updates.status='completed'; updates.winner=user.uid; }
         else if (otherProgress >= challenge.goal) { updates.status='completed'; updates.winner=otherUid; }
         else { updates.status='active'; }
-        await db.collection(APEX_APP_ID).doc(challenge.id).update(updates);
-        setLoading(false); onClose();
+        // Journal des relevés : sans lui, un score peut être modifié sans
+        // trace et l'adversaire n'a aucun moyen de suivre la progression.
+        updates.history = window.firebase.firestore.FieldValue.arrayUnion({
+            uid: user.uid, value: newVal, at: new Date().toISOString(),
+        });
+        try {
+            await db.collection(APEX_APP_ID).doc(challenge.id).update(updates);
+            notify(newVal >= challenge.goal ? "Objectif atteint, défi remporté !" : "Progression enregistrée.", newVal >= challenge.goal ? 'success' : 'info');
+            onClose();
+        } catch (e) {
+            notify(errorMessage(e), 'error');
+            setLoading(false);
+        }
     };
+
+    const journal = (challenge.history || []).slice().sort((a,b) => (a.at < b.at ? 1 : -1)).slice(0, 6);
+    const otherUidForNames = challenge.createdBy===user.uid ? challenge.challengedUid : challenge.createdBy;
+    const nameOf = (uid) => uid === user.uid
+        ? 'Moi'
+        : (challenge.createdBy === uid ? challenge.createdByName : challenge.challengedName) || 'Rival';
 
     const pct = Math.min(100, Math.round((value/challenge.goal)*100));
 
@@ -2006,6 +2245,24 @@ const UpdateProgressModal = ({ challenge, user, onClose }) => {
                         );
                     })}
                 </div>
+                {journal.length > 0 && (
+                    <div style={{marginBottom:'20px'}}>
+                        <p className="friend-section-title" style={{marginBottom:'4px'}}>
+                            <Icon name="clock" size={12}/>Derniers relevés
+                        </p>
+                        {journal.map((h, i) => (
+                            <div key={i} className="history-row">
+                                <span style={{color:'rgba(235,235,245,.78)',fontWeight:600}}>{nameOf(h.uid)}</span>
+                                <span style={{color:'rgba(235,235,245,.4)',fontSize:'11px'}}>
+                                    {new Date(h.at).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
+                                </span>
+                                <span style={{fontFamily:'Syne,sans-serif',fontWeight:800,color:h.uid===user.uid?'#FF9F0A':'rgba(235,235,245,.78)'}}>
+                                    {h.value} {challenge.unit}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
                 <button disabled={loading} onClick={handleUpdate}
                     style={{width:'100%',padding:'14px',borderRadius:'20px',background:'linear-gradient(135deg,#FF7A00,#F2570A)',color:'white',fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'11px',letterSpacing:'.12em',textTransform:'uppercase',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
                     {loading ? <><div style={{width:'14px',height:'14px',border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .7s linear infinite'}}/> Sauvegarde...</> : '✓ Enregistrer ma progression'}
@@ -2015,7 +2272,7 @@ const UpdateProgressModal = ({ challenge, user, onClose }) => {
     );
 };
 
-const ChallengeCard = ({ challenge, user, onUpdate, onAccept, onDecline, onCancel }) => {
+const ChallengeCard = ({ challenge, user, onUpdate, onAccept, onDecline, onCancel, onRematch }) => {
     const isCreator = challenge.createdBy === user.uid;
     const otherName = isCreator ? challenge.challengedName : challenge.createdByName;
     const otherPhoto = isCreator ? challenge.challengedPhoto : challenge.createdByPhoto;
@@ -2030,6 +2287,13 @@ const ChallengeCard = ({ challenge, user, onUpdate, onAccept, onDecline, onCance
     const isPending = challenge.status==='pending';
     const isActive = challenge.status==='active';
     const [cancelling, setCancelling] = useState(false);
+    const [rematching, setRematching] = useState(false);
+    const lastEntry = (challenge.history || []).slice().sort((a,b) => (a.at < b.at ? 1 : -1))[0];
+
+    const handleRematch = async () => {
+        setRematching(true);
+        try { await onRematch(challenge); } finally { setRematching(false); }
+    };
 
     const handleCancel = async () => {
         setCancelling(true);
@@ -2080,6 +2344,12 @@ const ChallengeCard = ({ challenge, user, onUpdate, onAccept, onDecline, onCance
                     ))}
                 </div>
             )}
+            {isActive && lastEntry && (
+                <p style={{fontSize:'11px',color:'rgba(235,235,245,.4)',marginBottom:'10px',display:'flex',alignItems:'center',gap:'6px'}}>
+                    <Icon name="clock" size={11}/>
+                    {(lastEntry.uid === user.uid ? 'Vous' : otherName)} — {lastEntry.value} {challenge.unit} le {new Date(lastEntry.at).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}
+                </p>
+            )}
             {isPending&&!isCreator && (
                 <div style={{display:'flex',gap:'8px'}}>
                     <button onClick={()=>onDecline(challenge.id)} style={{flex:1,padding:'10px',borderRadius:'18px',background:'rgba(255,69,58,.08)',border:'1px solid rgba(255,69,58,.2)',color:'#FF453A',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:'10px',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer'}}>Refuser</button>
@@ -2103,7 +2373,13 @@ const ChallengeCard = ({ challenge, user, onUpdate, onAccept, onDecline, onCance
             {(isWon||isLost) && (
                 <div style={{textAlign:'center',padding:'8px',background:isWon?'rgba(48,209,88,.06)':'rgba(255,69,58,.06)',borderRadius:'18px',border:`1px solid ${isWon?'rgba(48,209,88,.2)':'rgba(255,69,58,.15)'}`}}>
                     <span style={{fontSize:'18px'}} className="emoji-native">{isWon?'🏆':'💪'}</span>
-                    <p style={{fontSize:'10px',color:isWon?'#30D158':'#FF453A',fontWeight:700,marginTop:'2px'}}>{isWon?'Félicitations ! Défi remporté !':'Bon courage pour la prochaine !'}</p>
+                    <p style={{fontSize:'11px',color:isWon?'#30D158':'#FF453A',fontWeight:700,marginTop:'2px'}}>{isWon?'Défi remporté !':'Défi perdu de peu.'}</p>
+                    <button disabled={rematching} onClick={handleRematch}
+                        style={{marginTop:'10px',padding:'9px 18px',borderRadius:'99px',background:'rgba(255,122,0,.16)',border:'1px solid rgba(255,122,0,.35)',color:'#FF9F0A',fontWeight:700,fontSize:'12px',cursor:'pointer',display:'inline-flex',alignItems:'center',gap:'6px'}}>
+                        {rematching
+                            ? <><div style={{width:'12px',height:'12px',border:'2px solid rgba(255,122,0,.3)',borderTopColor:'#FF9F0A',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>Envoi…</>
+                            : <><Icon name="refresh" size={12}/>Demander une revanche</>}
+                    </button>
                 </div>
             )}
         </div>
@@ -2417,6 +2693,33 @@ function App() {
         return ()=>{ unsub(); unsub2(); };
     },[user,firebaseReady]);
 
+    // Sans cette veille, personne n'est prévenu qu'un défi a été accepté,
+    // refusé ou remporté tant qu'il ne rouvre pas l'onglet.
+    const seenChallengesRef = useRef(null);
+    useEffect(() => {
+        if (!user) { seenChallengesRef.current = null; return; }
+        const seen = seenChallengesRef.current;
+        if (seen) {
+            challenges.forEach(c => {
+                const before = seen[c.id];
+                if (!before) {
+                    if (c.status === 'pending' && c.createdBy !== user.uid) {
+                        notify(`${c.createdByName || 'Un athlète'} vous défie : ${c.title}`, 'info');
+                    }
+                    return;
+                }
+                if (before.status === c.status) return;
+                if (c.status === 'active' && c.createdBy === user.uid) notify(`Défi accepté : ${c.title}`, 'success');
+                if (c.status === 'declined' && c.createdBy === user.uid) notify(`Défi refusé : ${c.title}`, 'error');
+                if (c.status === 'completed') {
+                    notify(c.winner === user.uid ? `Victoire sur « ${c.title} » !` : `« ${c.title} » remporté par votre rival.`,
+                           c.winner === user.uid ? 'success' : 'info');
+                }
+            });
+        }
+        seenChallengesRef.current = Object.fromEntries(challenges.map(c => [c.id, { status: c.status, winner: c.winner }]));
+    }, [challenges, user]);
+
     const handleAgeConfirm = () => { setAgeConfirmed(true); setShowAgeGate(false); setShowConsentBanner(true); };
     const handleAgeDeny = () => { setShowAgeGate(false); setLoading(false); };
     const handleAcceptAll = () => { const c = saveConsent({functional:true,analytics:true,ageConfirmed:true}); setConsentState(c); setShowConsentBanner(false); };
@@ -2424,9 +2727,41 @@ function App() {
     const handleCustomSave = (prefs) => { const c = saveConsent({...prefs,ageConfirmed:true}); setConsentState(c); setShowConsentBanner(false); setShowCustomizer(false); };
     const handleManageConsent = () => setShowConsentBanner(true);
 
-    const acceptChallenge = async (id) => { await db.collection(APEX_APP_ID).doc(id).update({status:'active',accepted:true}); };
-    const declineChallenge = async (id) => { await db.collection(APEX_APP_ID).doc(id).update({status:'declined'}); };
-    const cancelChallenge = async (id) => { await db.collection(APEX_APP_ID).doc(id).update({status:'cancelled'}); };
+    const acceptChallenge = async (id) => {
+        try { await db.collection(APEX_APP_ID).doc(id).update({status:'active',accepted:true}); notify("Défi accepté. À vous de jouer.", 'success'); }
+        catch (e) { notify(errorMessage(e), 'error'); }
+    };
+    const declineChallenge = async (id) => {
+        try { await db.collection(APEX_APP_ID).doc(id).update({status:'declined'}); notify("Défi refusé.", 'info'); }
+        catch (e) { notify(errorMessage(e), 'error'); }
+    };
+    const cancelChallenge = async (id) => {
+        try { await db.collection(APEX_APP_ID).doc(id).update({status:'cancelled'}); notify("Défi annulé.", 'info'); }
+        catch (e) { notify(errorMessage(e), 'error'); }
+    };
+
+    // Revanche : rejoue le même objectif dans l'autre sens, sans repasser
+    // par le formulaire de création.
+    const rematchChallenge = async (c) => {
+        const isCreator = c.createdBy === user.uid;
+        const oppUid   = isCreator ? c.challengedUid : c.createdBy;
+        const oppName  = (isCreator ? c.challengedName : c.createdByName) || 'Rival';
+        const oppPhoto = (isCreator ? c.challengedPhoto : c.createdByPhoto) || getAvatar(oppName);
+        try {
+            await db.collection(APEX_APP_ID).add({
+                title: c.title && c.title.startsWith('Revanche') ? c.title : `Revanche — ${c.title || c.sport}`,
+                sport: c.sport, unit: c.unit, goal: c.goal, description: c.description || '',
+                deadline: null, isPublic: false,
+                createdAt: window.firebase.firestore.FieldValue.serverTimestamp(),
+                createdBy: user.uid,
+                createdByName: profile.displayName,
+                createdByPhoto: profile.photoURL || getAvatar(profile.displayName),
+                challengedUid: oppUid, challengedName: oppName, challengedPhoto: oppPhoto,
+                status: 'pending', progress: { [user.uid]: 0, [oppUid]: 0 }, accepted: false, history: [],
+            });
+            notify(`Revanche envoyée à ${oppName}.`, 'success');
+        } catch (e) { notify(errorMessage(e), 'error'); }
+    };
 
     const filteredChallenges = useMemo(() => {
         if (filter==='all') return challenges.filter(c=>c.status!=='declined'&&c.status!=='cancelled');
@@ -2481,6 +2816,7 @@ function App() {
 
             {consentState && !showConsentBanner && (
                 <div style={{height:'100dvh',display:'flex',flexDirection:'column',overflow:'hidden',background:'transparent',paddingBottom:'0'}}>
+                    <NetworkBanner/>
                     {!user && firebaseReady && (
                         <AuthScreen onShowPrivacy={()=>setShowPrivacy(true)} onShowTerms={()=>setShowTerms(true)}/>
                     )}
@@ -2550,7 +2886,8 @@ function App() {
                                             filteredChallenges.map(c => (
                                                 <ChallengeCard key={c.id} challenge={c}
                                                     user={{uid:user.uid,photoURL:profile.photoURL,displayName:profile.displayName}}
-                                                    onUpdate={setUpdateTarget} onAccept={acceptChallenge} onDecline={declineChallenge} onCancel={cancelChallenge}/>
+                                                    onUpdate={setUpdateTarget} onAccept={acceptChallenge} onDecline={declineChallenge}
+                                                    onCancel={cancelChallenge} onRematch={rematchChallenge}/>
                                             ))
                                         )}
                                     </div>
@@ -2611,6 +2948,7 @@ function App() {
                     )}
                 </div>
             )}
+            <ToastHost/>
         </>
     );
 }
