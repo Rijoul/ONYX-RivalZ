@@ -843,9 +843,13 @@ function isValidProfile(docData) {
 
 const SPORT_ICONS = {
     running:'🏃', cycling:'🚴', swimming:'🏊', pushups:'💪', pullups:'🏋️',
-    situps:'🔥', plank:'🧘', walking:'🚶', yoga:'🧘', football:'⚽',
+    situps:'🔥', plank:'🧘', walking:'🚶', yoga:'🧘‍♀️', football:'⚽',
     basketball:'🏀', tennis:'🎾', hiking:'🥾', rowing:'🚣', jumping:'⚡',
-    squats:'🏋️', burpees:'💥', custom:'🎯'
+    squats:'🏋️', burpees:'💥', custom:'🎯',
+    weightlifting:'🏋️‍♀️', boxing:'🥊', volleyball:'🏐', handball:'🤾',
+    rugby:'🏉', golf:'⛳', skiing:'⛷️', climbing:'🧗', dance:'💃',
+    skating:'🛼', martialarts:'🥋', badminton:'🏸', tabletennis:'🏓',
+    fencing:'🤺', crossfit:'🤸', surfing:'🏄',
 };
 const SPORT_LIST = [
     { id:'running', label:'Course à pied', unit:'km' },
@@ -857,12 +861,30 @@ const SPORT_LIST = [
     { id:'squats', label:'Squats', unit:'reps' },
     { id:'burpees', label:'Burpees', unit:'reps' },
     { id:'plank', label:'Gainage', unit:'sec' },
+    { id:'yoga', label:'Yoga', unit:'min' },
     { id:'walking', label:'Marche', unit:'km' },
     { id:'hiking', label:'Randonnée', unit:'km' },
     { id:'basketball', label:'Basket', unit:'points' },
     { id:'tennis', label:'Tennis', unit:'sets' },
     { id:'football', label:'Football', unit:'buts' },
     { id:'jumping', label:'Sauts', unit:'reps' },
+    { id:'weightlifting', label:'Musculation', unit:'kg' },
+    { id:'boxing', label:'Boxe', unit:'rounds' },
+    { id:'volleyball', label:'Volley', unit:'points' },
+    { id:'handball', label:'Handball', unit:'buts' },
+    { id:'rugby', label:'Rugby', unit:'essais' },
+    { id:'golf', label:'Golf', unit:'trous' },
+    { id:'skiing', label:'Ski', unit:'km' },
+    { id:'climbing', label:'Escalade', unit:'voies' },
+    { id:'dance', label:'Danse', unit:'min' },
+    { id:'skating', label:'Roller/Skate', unit:'km' },
+    { id:'martialarts', label:'Arts martiaux', unit:'min' },
+    { id:'badminton', label:'Badminton', unit:'sets' },
+    { id:'tabletennis', label:'Tennis de table', unit:'sets' },
+    { id:'fencing', label:'Escrime', unit:'touches' },
+    { id:'crossfit', label:'Crossfit', unit:'reps' },
+    { id:'surfing', label:'Surf', unit:'min' },
+    { id:'rowing', label:'Aviron', unit:'m' },
     { id:'custom', label:'Autre', unit:'pts' },
 ];
 
@@ -873,6 +895,10 @@ const SPORT_KCAL_PER_UNIT = {
     running: 62, cycling: 28, swimming: 0.09, walking: 42, hiking: 58,
     pushups: 0.32, pullups: 1.1, situps: 0.2, squats: 0.32, burpees: 0.9,
     plank: 0.08, basketball: 6, tennis: 90, football: 45, jumping: 0.28,
+    yoga: 4.5, weightlifting: 0.15, boxing: 120, volleyball: 4, handball: 30,
+    rugby: 80, golf: 35, skiing: 50, climbing: 40, dance: 6, skating: 35,
+    martialarts: 8, badminton: 70, tabletennis: 40, fencing: 8, crossfit: 0.6,
+    surfing: 7, rowing: 0.1,
     custom: 0.4,
 };
 const estimateCalories = (sport, value) => {
@@ -890,15 +916,33 @@ const EXERCISE_LIBRARY = [
     { id:'cycling',   group:'Cardio',      tips:'Cadence de pédalage régulière (~80-90 rpm), genoux alignés avec la roue.' },
     { id:'swimming',  group:'Cardio',      tips:'Respiration bilatérale, corps horizontal, appui sur l\'avant-bras à chaque traction.' },
     { id:'jumping',   group:'Cardio',      tips:'Corde à sauter ou jumping jacks : atterrissage souple, genoux légèrement fléchis.' },
+    { id:'dance',     group:'Cardio',      tips:'Laissez le rythme guider l\'amplitude ; échauffez chevilles et genoux avant.' },
+    { id:'skating',   group:'Cardio',      tips:'Genoux fléchis, poussées latérales amples, regard loin devant pour l\'équilibre.' },
+    { id:'surfing',   group:'Cardio',      tips:'Rame régulière à plat ventre, pop-up rapide, regard vers la plage à la prise de vague.' },
+    { id:'rowing',    group:'Cardio',      tips:'Poussez avec les jambes avant de tirer avec le dos, puis les bras : jambes-dos-bras.' },
     { id:'pushups',   group:'Force',       tips:'Corps gainé de la tête aux talons, coudes à 45°, amplitude complète.' },
     { id:'pullups',   group:'Force',       tips:'Épaules basses, tirez la poitrine vers la barre, descente contrôlée.' },
     { id:'squats',    group:'Force',       tips:'Dos droit, genoux dans l\'axe des pieds, descendez jusqu\'aux cuisses parallèles au sol.' },
     { id:'situps',    group:'Force',       tips:'Pieds ancrés ou libres, montée contrôlée sans tirer sur la nuque.' },
     { id:'burpees',   group:'Force',       tips:'Squat → planche → pompe → saut : enchaînez sans casser le rythme.' },
+    { id:'weightlifting', group:'Force',   tips:'Technique avant charge : dos neutre, mouvement contrôlé, respirez à l\'effort.' },
+    { id:'crossfit',  group:'Force',       tips:'WOD (Work Of the Day) : enchaînez les mouvements fonctionnels à haute intensité, technique avant vitesse.' },
     { id:'plank',     group:'Gainage',     tips:'Ligne droite épaules-hanches-chevilles, abdos et fessiers contractés.' },
+    { id:'yoga',      group:'Gainage',     tips:'Respiration ample et régulière, tenez chaque posture sans forcer l\'amplitude.' },
     { id:'basketball',group:'Sport co.',   tips:'Enregistrez vos points marqués sur un match ou une séance de tirs.' },
     { id:'football',  group:'Sport co.',   tips:'Enregistrez vos buts marqués sur un match ou un entraînement.' },
+    { id:'volleyball',group:'Sport co.',   tips:'Enregistrez vos points marqués (services, attaques) sur un match.' },
+    { id:'handball',  group:'Sport co.',   tips:'Enregistrez vos buts marqués sur un match ou un entraînement.' },
+    { id:'rugby',     group:'Sport co.',   tips:'Enregistrez vos essais marqués sur un match ou un entraînement.' },
     { id:'tennis',    group:'Raquette',    tips:'Enregistrez le nombre de sets joués, gagnés ou non.' },
+    { id:'badminton', group:'Raquette',    tips:'Enregistrez le nombre de sets joués sur un match ou un entraînement.' },
+    { id:'tabletennis',group:'Raquette',   tips:'Enregistrez le nombre de sets joués sur un match ou un entraînement.' },
+    { id:'boxing',    group:'Combat',      tips:'Gardez le menton rentré, appuis dynamiques, alternez frappes et déplacements par round.' },
+    { id:'martialarts', group:'Combat',    tips:'Échauffement articulaire complet, technique précise avant l\'intensité, respectez les temps de récupération.' },
+    { id:'fencing',   group:'Combat',      tips:'Garde basse, jeu de jambes précis, enregistrez vos touches marquées à l\'assaut.' },
+    { id:'golf',      group:'Outdoor',     tips:'Enregistrez le nombre de trous joués sur un parcours ou au practice.' },
+    { id:'skiing',    group:'Outdoor',     tips:'Genoux fléchis, poids sur l\'avant des skis, regardez loin dans la pente.' },
+    { id:'climbing',  group:'Outdoor',     tips:'Poussez avec les jambes plus qu\'avec les bras, gardez les hanches proches de la paroi.' },
     { id:'custom',    group:'Autre',       tips:'Pour tout ce qui ne rentre pas dans les cases ci-dessus.' },
 ];
 
@@ -1198,11 +1242,16 @@ const WorkoutTimer = ({ mode = 'up', targetSec = 0, onDone, compact = false }) =
 
 const SoloSessionModal = ({ user, onClose, onSaved }) => {
     const [sport, setSport] = useState(SPORT_LIST[0]?.id || '');
+    const [group, setGroup] = useState('Tous');
     const [value, setValue] = useState('');
     const [notes, setNotes] = useState('');
     const [saving, setSaving] = useState(false);
     const [showTimer, setShowTimer] = useState(false);
     const [durationSec, setDurationSec] = useState(0);
+
+    const sportGroups = ['Tous', ...Array.from(new Set(EXERCISE_LIBRARY.map(e=>e.group)))];
+    const groupOf = (id) => EXERCISE_LIBRARY.find(e=>e.id===id)?.group;
+    const visibleSports = group==='Tous' ? SPORT_LIST : SPORT_LIST.filter(s => groupOf(s.id)===group);
 
     const selectedSport = SPORT_LIST.find(s => s.id === sport);
     const calPreview = estimateCalories(sport, value);
@@ -1228,15 +1277,23 @@ const SoloSessionModal = ({ user, onClose, onSaved }) => {
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-sheet" style={{padding:'24px',borderRadius:'34px'}} onClick={e=>e.stopPropagation()}>
-                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'20px'}}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'16px'}}>
                     <div>
                         <p style={{color:'#FF7A00',fontSize:'9px',fontWeight:700,letterSpacing:'.15em',textTransform:'uppercase'}}>Entraînement solo</p>
                         <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'16px',color:'white',marginTop:'2px'}}>Nouvelle séance</h3>
                     </div>
                     <button onClick={onClose} style={{padding:'8px',background:'rgba(255,255,255,.12)',borderRadius:'18px',border:'1px solid rgba(255,255,255,.12)',color:'rgba(235,235,245,.58)',cursor:'pointer',display:'flex'}}><Icon name="x" size={16}/></button>
                 </div>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'8px',marginBottom:'18px'}}>
-                    {SPORT_LIST.map(s => (
+                <div style={{display:'flex',gap:'6px',marginBottom:'12px',overflowX:'auto',paddingBottom:'4px'}}>
+                    {sportGroups.map(g => (
+                        <button key={g} onClick={()=>setGroup(g)}
+                            style={{flexShrink:0,padding:'6px 12px',borderRadius:'99px',border:`1px solid ${group===g?'rgba(255,122,0,.5)':'rgba(255,255,255,.12)'}`,background:group===g?'rgba(255,122,0,.14)':'rgba(255,255,255,.055)',color:group===g?'#FF9F0A':'rgba(235,235,245,.58)',fontSize:'9px',fontWeight:700,letterSpacing:'.03em',textTransform:'uppercase',cursor:'pointer',whiteSpace:'nowrap'}}>
+                            {g}
+                        </button>
+                    ))}
+                </div>
+                <div className="custom-scroll" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'8px',marginBottom:'18px',maxHeight:'168px',overflowY:'auto',paddingRight:'2px'}}>
+                    {visibleSports.map(s => (
                         <button key={s.id} onClick={()=>setSport(s.id)}
                             style={{padding:'10px 4px',borderRadius:'16px',border:`1px solid ${sport===s.id?'rgba(255,122,0,.5)':'rgba(255,255,255,.12)'}`,background:sport===s.id?'rgba(255,122,0,.14)':'rgba(255,255,255,.05)',cursor:'pointer',textAlign:'center'}}>
                             <div className="emoji-native" style={{fontSize:'18px'}}>{SPORT_ICONS[s.id]}</div>
@@ -2757,8 +2814,11 @@ const CreateChallengeModal = ({ user, profile, friends, friendProfiles, onClose 
     const [form, setForm] = useState({ title:'', sport:'', unit:'', goal:'', deadline:'', description:'', challengedUid:'', isPublic:false });
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [sportGroup, setSportGroup] = useState('Tous');
 
     const selectedSport = SPORT_LIST.find(s => s.id === form.sport);
+    const sportGroups = ['Tous', ...Array.from(new Set(EXERCISE_LIBRARY.map(e=>e.group)))];
+    const visibleChallengeSports = sportGroup==='Tous' ? SPORT_LIST : SPORT_LIST.filter(s => EXERCISE_LIBRARY.find(e=>e.id===s.id)?.group===sportGroup);
 
     const handleSubmit = async () => {
         if (!form.sport || !form.goal || !form.challengedUid) return;
@@ -2814,8 +2874,16 @@ const CreateChallengeModal = ({ user, profile, friends, friendProfiles, onClose 
                         <div style={{padding:'0 20px 20px',maxHeight:'65vh',overflowY:'auto'}} className="custom-scroll">
                             {step===1 && (
                                 <div className="fade-in">
+                                    <div style={{display:'flex',gap:'6px',marginBottom:'12px',overflowX:'auto',paddingBottom:'4px'}}>
+                                        {sportGroups.map(g => (
+                                            <button key={g} onClick={()=>setSportGroup(g)}
+                                                style={{flexShrink:0,padding:'6px 12px',borderRadius:'99px',border:`1px solid ${sportGroup===g?'rgba(255,122,0,.5)':'rgba(255,255,255,.12)'}`,background:sportGroup===g?'rgba(255,122,0,.14)':'rgba(255,255,255,.055)',color:sportGroup===g?'#FF9F0A':'rgba(235,235,245,.58)',fontSize:'9px',fontWeight:700,letterSpacing:'.03em',textTransform:'uppercase',cursor:'pointer',whiteSpace:'nowrap'}}>
+                                                {g}
+                                            </button>
+                                        ))}
+                                    </div>
                                     <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'8px',marginBottom:'16px'}}>
-                                        {SPORT_LIST.map(s => (
+                                        {visibleChallengeSports.map(s => (
                                             <button key={s.id} onClick={() => setForm(f=>({...f,sport:s.id,unit:s.unit}))}
                                                 style={{padding:'12px 8px',borderRadius:'20px',border:`1px solid ${form.sport===s.id?'#FF7A00':'rgba(255,255,255,.12)'}`,background:form.sport===s.id?'rgba(255,122,0,.12)':'rgba(255,255,255,.055)',cursor:'pointer',textAlign:'center',transition:'all .15s'}}>
                                                 <div style={{fontSize:'20px',marginBottom:'4px'}} className="emoji-native">{SPORT_ICONS[s.id]}</div>
